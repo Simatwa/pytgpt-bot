@@ -1,0 +1,7 @@
+telegram-token=<Your-telegram-token>
+admin-id=12345678
+max-tokens=600
+timeout=30
+voice=Brian
+loglevel=20
+logfile=pytgpt-bot.log
