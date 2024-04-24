@@ -85,9 +85,10 @@ Proceed to fill the [env](env) configuration file as per the needs and then rena
 - **Command**: `/default`
 - **Description**: Engage in a default chat with AI. This command is a shortcut to the `/chat` command, offering a quick and straightforward way to start a conversation with the bot.
 
-## Getting Started
+### 10. Clear chat data
 
-To get started with `pytgpt`, simply add the bot to your Telegram account and begin exploring the features. Each command is designed to be intuitive and user-friendly, making it easy to navigate and use the bot.
+- **Command**: `/clear_database`
+- **Description**: This is an administrative command for deleting all entries of chat database. The user's Telegram ID must match the one set at the [.env](https://github.com/Simatwa/pytgpt-bot/blob/7b1bfed971674be938de2b2163711f6602d54995/env#L2) config file.
 
 ## Support and Feedback
 
@@ -95,8 +96,8 @@ If you have any questions, feedback, or suggestions for `pytgpt`, please feel fr
 
 ## License
 
-`pytgpt` is open-source and available under the MIT License. Feel free to use, modify, and distribute the code as you see fit.
+`pytgpt-bot` is open-source and available under the [MIT License](LICENSE). Feel free to use, modify, and distribute the code as you see fit.
 
 ---
 
-Thank you for using `pytgpt`. Enjoy your AI-powered interactions!
+Thank you for using `pytgpt-bot`. Enjoy your AI-powered interactions!
