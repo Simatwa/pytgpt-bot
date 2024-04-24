@@ -111,6 +111,8 @@ def check_chat_history(message: telebot.types.Message):
 @handler_formatter
 def text_to_image_default(message: telebot.types.Message):
     """Generate image using `imager`"""
+    if not message.text:
+        bot.reply_to(message, f"Text is required.")
     generator_obj = image_generator.Imager(
         timeout=30,
     )
@@ -127,6 +129,8 @@ def text_to_image_default(message: telebot.types.Message):
 @handler_formatter
 def text_to_image_prodia(message: telebot.types.Message):
     """Generate image using `prodia`"""
+    if not message.text:
+        bot.reply_to(message, f"Text is required.")
     generator_obj = image_generator.Prodia(timeout=timeout)
     return bot.send_photo(
         message.chat.id,
@@ -139,6 +143,8 @@ def text_to_image_prodia(message: telebot.types.Message):
 @handler_formatter
 def text_to_audio(message: telebot.types.Message):
     """Convert text to audio"""
+    if not message.text:
+        bot.reply_to(message, f"Text is required.")
     audio_chunk = audio_generator.text_to_audio(
         message=message.text,
         voice=voice,
