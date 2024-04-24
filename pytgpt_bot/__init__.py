@@ -3,6 +3,7 @@ import pytgpt.auto as text_generator
 import pytgpt.imager as image_generator
 from pytgpt.utils import Audio as audio_generator
 from pytgpt.utils import Conversation
+from pytgpt.utils import AwesomePrompts
 from functools import wraps
 import logging
 
@@ -84,12 +85,13 @@ def echo_user_id(message: telebot.types.Message):
 @handler_formatter
 def set_chat_intro(message: telebot.types.Message):
     """Set new value for chat intro"""
-    if not len(message.text) > 10:
+    intro = AwesomePrompts().get_act(message.text) or message.text
+    if not len(intro) > 10:
         return bot.reply_to(
             message, "The chat introduction must be at least 10 characters long."
         )
     user = User(message.from_user.id)
-    user.update_intro(message.text)
+    user.update_intro(intro)
     bot.reply_to(message, "New intro set successfully.")
 
 
@@ -112,7 +114,7 @@ def check_chat_history(message: telebot.types.Message):
 def text_to_image_default(message: telebot.types.Message):
     """Generate image using `imager`"""
     if not message.text:
-        bot.reply_to(message, f"Text is required.")
+        return bot.reply_to(message, f"Text is required.")
     generator_obj = image_generator.Imager(
         timeout=30,
     )
@@ -130,7 +132,7 @@ def text_to_image_default(message: telebot.types.Message):
 def text_to_image_prodia(message: telebot.types.Message):
     """Generate image using `prodia`"""
     if not message.text:
-        bot.reply_to(message, f"Text is required.")
+        return bot.reply_to(message, f"Text is required.")
     generator_obj = image_generator.Prodia(timeout=timeout)
     return bot.send_photo(
         message.chat.id,
@@ -144,7 +146,7 @@ def text_to_image_prodia(message: telebot.types.Message):
 def text_to_audio(message: telebot.types.Message):
     """Convert text to audio"""
     if not message.text:
-        bot.reply_to(message, f"Text is required.")
+        return bot.reply_to(message, f"Text is required.")
     audio_chunk = audio_generator.text_to_audio(
         message=message.text,
         voice=voice,
