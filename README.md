@@ -1,10 +1,14 @@
 <p align="center">
 <a href="https://github.com/Simatwa/pytgpt-bot/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/static/v1?logo=MIT&color=Blue&message=MIT&label=License"/></a>
 <a href="https://github.com/psf/black"><img alt="Black" src="https://img.shields.io/static/v1?logo=Black&label=Code-style&message=Black"/></a>
+<!-- 
 <a href="https://pepy.tech/project/pytgpt-bot"><img src="https://static.pepy.tech/personalized-badge/pytgpt-bot?period=total&units=international_system&left_color=grey&right_color=green&left_text=Downloads" alt="Downloads"></a>
 <a href="https://github.com/Simatwa/pytgpt-bot/releases/latest"><img src="https://img.shields.io/github/downloads/Simatwa/pytgpt-bot/total?label=Asset%20Downloads&color=success" alt="Downloads"></img></a>
+-->
 <a href="https://github.com/Simatwa/pytgpt-bot/releases"><img src="https://img.shields.io/github/v/release/Simatwa/pytgpt-bot?color=success&label=Release&logo=github" alt="Latest release"></img></a>
+<!--
 <a href="https://github.com/Simatwa/pytgpt-bot/releases"><img src="https://img.shields.io/github/release-date/Simatwa/pytgpt-bot?label=Release date&logo=github" alt="release date"></img></a>
+-->
 <a href="https://hits.seeyoufarm.com"><img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com/Simatwa/pytgpt-bot"/></a>
 <a href="https://wakatime.com/badge/github/Simatwa/pytgpt-bot"><img src="https://wakatime.com/badge/github/Simatwa/pytgpt-bot.svg" alt="wakatime"></a>
 </p>
