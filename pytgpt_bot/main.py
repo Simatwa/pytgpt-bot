@@ -27,6 +27,13 @@ bot.remove_webhook()
 
 logging.info(f"Bot started sucessfully. Admin ID - [{admin_id}]")
 
+admin_commands = """
+    /clear : Clear all chats.
+    /total : Total chats available.
+    /drop : Clear entire chat table.
+    /sql : Run sql statements against database.
+"""
+
 
 def handler_formatter(text: bool = False, admin: bool = False):
     """Handles common message handler verification and execptions
@@ -45,7 +52,7 @@ def handler_formatter(text: bool = False, admin: bool = False):
                     f"Serving user [{message.from_user.id}] ({message.from_user.full_name}) - Function [{func.__name__}]"
                 )
                 if admin and not User(message.from_user.id).is_admin:
-                    return bot.reply_to(message, "Action restricted to admins only")
+                    return bot.reply_to(message, "Action restricted to admins only!")
 
                 if text and not message.text:
                     return bot.reply_to(message, "Text is required.")
@@ -85,7 +92,9 @@ def home(message: telebot.types.Message):
 
     return bot.send_message(
         message.chat.id,
-        text=home.__doc__,
+        text=(
+            home.__doc__ + admin_commands if User(message.from_user.id).is_admin else ""
+        ),
     )
 
 
@@ -178,7 +187,7 @@ def reset_chat(message: telebot.types.Message):
     )
 
 
-@bot.message_handler(commands=["clear_chats"])
+@bot.message_handler(commands=["clear", "clear_chats"])
 @handler_formatter(admin=True)
 def clear_chats(message: telebot.types.Message):
     """Delete all chat entries"""
@@ -189,7 +198,7 @@ def clear_chats(message: telebot.types.Message):
     return bot.reply_to(message, "Chats cleared successfully.")
 
 
-@bot.message_handler(commands=["total_chats"])
+@bot.message_handler(commands=["total", "total_chats"])
 @handler_formatter(admin=True)
 def total_chats_query(message: telebot.types.Message):
     """Query total chats"""
@@ -197,7 +206,19 @@ def total_chats_query(message: telebot.types.Message):
     logging.warning(
         f"Total Chats query - [{message.from_user.full_name}] ({message.from_user.id}, {message.from_user.username})"
     )
-    return bot.reply_to(message, f"Total Chats [{total_chats}].")
+    return bot.reply_to(message, f"Total Chats **{total_chats}**")
+
+
+@bot.message_handler(commands=["drop", "drop_chats"])
+@handler_formatter(admin=True)
+def total_chats_table(message: telebot.types.Message):
+    """Drop chat table and create new"""
+    logging.warning(
+        f"Dropping Chat table and reinitialize - [{message.from_user.full_name}] ({message.from_user.id}, {message.from_user.username})"
+    )
+    Chat.query("DROP TABLE CHAT")
+    Chat.initialize()
+    return bot.reply_to(message, f"Chat table dropped and new one created.")
 
 
 @bot.message_handler(commands=["sql"])
@@ -208,7 +229,11 @@ def run_sql_statement(message: telebot.types.Message):
         f"Running SQL statements - [{message.from_user.full_name}] ({message.from_user.id}, {message.from_user.username})"
     )
     try:
-        response = Chat.query(message.text)
+        response = f"""
+        ```
+        {Chat.query(message.text)}
+        ```
+        """
 
     except Exception as e:
         response = f"ERROR : {e.args[1] if e.args and len(e.args)>1 else e}"
