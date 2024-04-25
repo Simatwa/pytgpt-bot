@@ -37,7 +37,6 @@ setup(
         "pytelegrambotapi==4.17.0",
         "python-tgpt==0.6.6",
         "python-dotenv==1.0.0",
-        "appdirs==1.4.4",
         "click==8.1.3",
     ],
     python_requires=">=3.10",

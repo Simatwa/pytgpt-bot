@@ -12,7 +12,7 @@
 </p>
 
 <h1 align="center">
-Welcome to <a href="https://github.com/Simatwa/pytgpt-bot">pytgpt-bot</a>
+Welcome to <a href="https://t.me/pytgpt_bot">pytgpt-bot</a>
 </h1>
 
 This is a Telegram bot based on [python-tgpt](https://github.com/Simatwa/python-tgpt), a powerful tool designed to enhance your interactions with AI. This bot is built on the robust foundation of the `pyTelegramBotAPI` and offers a wide range of features to make your experience with AI more engaging and interactive. Whether you're looking to chat with AI, generate images and audio from text, `pytgpt-bot` has got you covered.

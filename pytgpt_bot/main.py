@@ -54,11 +54,11 @@ def handler_formatter(text: bool = False, admin: bool = False):
                 if admin and not User(message.from_user.id).is_admin:
                     return bot.reply_to(message, "Action restricted to admins only!")
 
-                if text and not message.text:
-                    return bot.reply_to(message, "Text is required.")
-
                 if message.text and message.text.startswith("/"):
                     message.text = " ".join(message.text.split(" ")[1:])
+
+                if text and not message.text:
+                    return bot.reply_to(message, "Text is required.")
 
                 return func(message)
             except Exception as e:
@@ -71,6 +71,20 @@ def handler_formatter(text: bool = False, admin: bool = False):
 
     return main
 
+def send_long_text(message:telebot.types.Message, text:str):
+    """Send texts longer than 4096 long
+
+    Args:
+        message (telebot.types.Message): Message object.
+        text (str): Text to be sent.
+    """
+    max_length = 4096
+    if len(text) <= max_length:
+        bot.send_message(message.chat.id, text)
+    else:
+        parts = [text[i:i+max_length] for i in range(0, len(text), max_length)]
+        for part in parts:
+            bot.send_message(message.chat.id, part)
 
 @bot.message_handler(commands=["help", "start"])
 @handler_formatter()
@@ -132,7 +146,7 @@ def check_chat_intro(message: telebot.types.Message):
 @handler_formatter()
 def check_chat_history(message: telebot.types.Message):
     user = User(message.from_user.id)
-    return bot.reply_to(message, user.chat_history or "Your chat history is empty.")
+    return send_long_text(message,  user.chat_history or "Your chat history is empty.")
 
 
 @bot.message_handler(commands=["image", "img"])
@@ -239,7 +253,7 @@ def run_sql_statement(message: telebot.types.Message):
         response = f"ERROR : {e.args[1] if e.args and len(e.args)>1 else e}"
 
     finally:
-        return bot.send_message(message.chat.id, response)
+        return send_long_text(message, response)
 
 
 @bot.message_handler(content_types=["text"])
@@ -261,7 +275,7 @@ def text_chat(message: telebot.types.Message):
         prompt=message.text, response=ai_response, force=True
     )
     user.update_history(conversation.chat_history)
-    return bot.send_message(message.chat.id, text=ai_response)
+    return send_long_text(message, ai_response)
 
 
 @bot.message_handler(func=lambda val: True)
