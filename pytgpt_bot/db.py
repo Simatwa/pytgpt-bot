@@ -120,6 +120,7 @@ class Chat:
         csr.execute(sql)
         entries = csr.fetchall()
         csr.close()
+        conn.commit()
         conn.close()
         return entries
 

@@ -28,28 +28,45 @@ bot.remove_webhook()
 logging.info(f"Bot started sucessfully. Admin ID - [{admin_id}]")
 
 
-def handler_formatter(func):
+def handler_formatter(text: bool = False, admin: bool = False):
+    """Handles common message handler verification and execptions
 
-    @wraps(func)
-    def decorator(message: telebot.types.Message):
-        try:
-            logging.info(
-                f"Serving user [{message.from_user.id}] ({message.from_user.full_name}) - Function [{func.__name__}]"
-            )
-            if message.text and message.text.startswith("/"):
-                message.text = " ".join(message.text.split(" ")[1:])
-            return func(message)
-        except Exception as e:
-            logging.error(f"Error on function - {func.__name__} - {e}")
-            return bot.reply_to(
-                message, text="An error occured and could't complete that request."
-            )
+    Args:
+        text (bool, optional): Command must contain text?. Defaults to False.
+        admin (bool, optional): Needs admin privileges?. Defaults to False.
+    """
 
-    return decorator
+    def main(func):
+
+        @wraps(func)
+        def decorator(message: telebot.types.Message):
+            try:
+                logging.info(
+                    f"Serving user [{message.from_user.id}] ({message.from_user.full_name}) - Function [{func.__name__}]"
+                )
+                if admin and not User(message.from_user.id).is_admin:
+                    return bot.reply_to(message, "Action restricted to admins only")
+
+                if text and not message.text:
+                    return bot.reply_to(message, "Text is required.")
+
+                if message.text and message.text.startswith("/"):
+                    message.text = " ".join(message.text.split(" ")[1:])
+
+                return func(message)
+            except Exception as e:
+                logging.error(f"Error on function - {func.__name__} - {e}")
+                return bot.reply_to(
+                    message, text="An error occured and could't complete that request."
+                )
+
+        return decorator
+
+    return main
 
 
 @bot.message_handler(commands=["help", "start"])
-@handler_formatter
+@handler_formatter()
 def home(message: telebot.types.Message):
     """
     Welcome to [pytgpt-bot](https://github.com/Simatwa/pytgpt-bot).
@@ -73,7 +90,7 @@ def home(message: telebot.types.Message):
 
 
 @bot.message_handler(commands=["myid"])
-@handler_formatter
+@handler_formatter()
 def echo_user_id(message: telebot.types.Message):
     return bot.reply_to(
         message,
@@ -82,7 +99,7 @@ def echo_user_id(message: telebot.types.Message):
 
 
 @bot.message_handler(commands=["sintro"])
-@handler_formatter
+@handler_formatter(text=True)
 def set_chat_intro(message: telebot.types.Message):
     """Set new value for chat intro"""
     intro = AwesomePrompts().get_act(message.text) or message.text
@@ -96,25 +113,23 @@ def set_chat_intro(message: telebot.types.Message):
 
 
 @bot.message_handler(commands=["intro"])
-@handler_formatter
+@handler_formatter()
 def check_chat_intro(message: telebot.types.Message):
     user = User(message.from_user.id)
     return bot.reply_to(message, user.chat_intro)
 
 
 @bot.message_handler(commands=["history"])
-@handler_formatter
+@handler_formatter()
 def check_chat_history(message: telebot.types.Message):
     user = User(message.from_user.id)
     return bot.reply_to(message, user.chat_history or "Your chat history is empty.")
 
 
-@bot.message_handler(commands=["imager", "img"])
-@handler_formatter
+@bot.message_handler(commands=["image", "img"])
+@handler_formatter(text=True)
 def text_to_image_default(message: telebot.types.Message):
-    """Generate image using `imager`"""
-    if not message.text:
-        return bot.reply_to(message, f"Text is required.")
+    """Generate image using `image`"""
     generator_obj = image_generator.Imager(
         timeout=30,
     )
@@ -128,11 +143,9 @@ def text_to_image_default(message: telebot.types.Message):
 
 
 @bot.message_handler(commands=["prodia", "prod"])
-@handler_formatter
+@handler_formatter(text=True)
 def text_to_image_prodia(message: telebot.types.Message):
     """Generate image using `prodia`"""
-    if not message.text:
-        return bot.reply_to(message, f"Text is required.")
     generator_obj = image_generator.Prodia(timeout=timeout)
     return bot.send_photo(
         message.chat.id,
@@ -142,11 +155,9 @@ def text_to_image_prodia(message: telebot.types.Message):
 
 
 @bot.message_handler(commands=["audio", "aud"])
-@handler_formatter
+@handler_formatter(text=True)
 def text_to_audio(message: telebot.types.Message):
     """Convert text to audio"""
-    if not message.text:
-        return bot.reply_to(message, f"Text is required.")
     audio_chunk = audio_generator.text_to_audio(
         message=message.text,
         voice=voice,
@@ -156,7 +167,7 @@ def text_to_audio(message: telebot.types.Message):
 
 
 @bot.message_handler(commands=["reset"])
-@handler_formatter
+@handler_formatter()
 def reset_chat(message: telebot.types.Message):
     """Reset current chat thread"""
     user = User(message.from_user.id)
@@ -167,23 +178,47 @@ def reset_chat(message: telebot.types.Message):
     )
 
 
-@bot.message_handler(commands=["clear_database"])
-@handler_formatter
+@bot.message_handler(commands=["clear_chats"])
+@handler_formatter(admin=True)
 def clear_chats(message: telebot.types.Message):
     """Delete all chat entries"""
-    user = User(message.from_user.id)
-    if not user.is_admin:
-        return bot.reply_to(message, "Action resticted to admin only!")
-    else:
-        Chat.query("DELETE FROM Chat")
-        logging.warning(
-            f"Clearing Chats - [{message.from_user.full_name}] ({message.from_user.id}, {message.from_user.username})"
-        )
-        return bot.reply_to(message, "Chats cleared successfully.")
+    Chat.query("DELETE FROM Chat")
+    logging.warning(
+        f"Clearing Chats - [{message.from_user.full_name}] ({message.from_user.id}, {message.from_user.username})"
+    )
+    return bot.reply_to(message, "Chats cleared successfully.")
+
+
+@bot.message_handler(commands=["total_chats"])
+@handler_formatter(admin=True)
+def total_chats_query(message: telebot.types.Message):
+    """Query total chats"""
+    total_chats = Chat.query("SELECT COUNT(id) FROM Chat")[0][0]
+    logging.warning(
+        f"Total Chats query - [{message.from_user.full_name}] ({message.from_user.id}, {message.from_user.username})"
+    )
+    return bot.reply_to(message, f"Total Chats [{total_chats}].")
+
+
+@bot.message_handler(commands=["sql"])
+@handler_formatter(admin=True)
+def run_sql_statement(message: telebot.types.Message):
+    """Run sql statements against database"""
+    logging.warning(
+        f"Running SQL statements - [{message.from_user.full_name}] ({message.from_user.id}, {message.from_user.username})"
+    )
+    try:
+        response = Chat.query(message.text)
+
+    except Exception as e:
+        response = f"ERROR : {e.args[1] if e.args and len(e.args)>1 else e}"
+
+    finally:
+        return bot.send_message(message.chat.id, response)
 
 
 @bot.message_handler(content_types=["text"])
-@handler_formatter
+@handler_formatter(text=True)
 def text_chat(message: telebot.types.Message):
     """Text generation"""
     user = User(message.from_user.id)

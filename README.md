@@ -58,7 +58,7 @@ Alternatively, using CLI interface::
 
 ### 2. Generate Images from Text
 
-- **Command**: `/imager`
+- **Command**: `/image`
 - **Description**: Generate images from text descriptions. This feature uses AI to create visual representations of your text inputs, making it a fun and creative way to explore the capabilities of AI.
 
 - **Variant**: `/prodia`
@@ -96,10 +96,20 @@ Alternatively, using CLI interface::
 
 ### 9. Clear chat data
 
-- **Command**: `/clear_database`
+- **Command**: `/clear_chats`
 - **Description**: This is an administrative command for deleting all entries of chat database. The user's Telegram ID must match the one set at the [.env](https://github.com/Simatwa/pytgpt-bot/blob/7b1bfed971674be938de2b2163711f6602d54995/env#L2) config file.
 
-### 10. Default Chat with AI
+### 10. Check total Chat
+
+- **Command**: `/total_chats`
+- **Description**: This is an administrative command for checking total chat records. The user's Telegram ID must match the one set at the [.env](https://github.com/Simatwa/pytgpt-bot/blob/7b1bfed971674be938de2b2163711f6602d54995/env#L2) config file.
+
+### 11. Run sql statements
+
+- **Command**: `/sql`
+- **Description**: This is an administrative command for running **SQL STATEMENTS** against the database. The user's Telegram ID must match the one set at the [.env](https://github.com/Simatwa/pytgpt-bot/blob/7b1bfed971674be938de2b2163711f6602d54995/env#L2) config file.
+
+### 12. Default Chat with AI
 
 - **Command**: `<Any other text>`
 - **Description**: Engage in a default chat with AI. This command is a shortcut to the `/chat` command, offering a quick and straightforward way to start a conversation with the bot.
