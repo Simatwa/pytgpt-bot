@@ -51,73 +51,43 @@ Alternatively, using CLI interface::
 
 ## Features
 
-### 1. Chat with AI
+### Commands
 
-- **Command**: `/chat`
-- **Description**: Engage in a conversation with AI. This feature allows you to interact with the bot in a natural, conversational manner.
+- `/help`: This command displays the help information, providing users with a list of available commands and a brief description of what each command does. It's a useful way for users to quickly understand how to interact with the bot.
 
-### 2. Generate Images from Text
+- `/chat`: Allows users to engage in natural language conversations with the AI. This command initiates a chat session where users can ask questions, make requests, or simply chat with the AI.
 
-- **Command**: `/image`
-- **Description**: Generate images from text descriptions. This feature uses AI to create visual representations of your text inputs, making it a fun and creative way to explore the capabilities of AI.
+- `/image`: This command is used to generate images from text descriptions. Users can input a text description, and the bot will attempt to create an image based on that description. This feature can be particularly useful for visualizing ideas or concepts.
 
-- **Variant**: `/prodia`
-- **Description**: Generate images from text descriptions using the Prodia AI model. This variant offers a different style of image generation, providing a unique twist to your creative endeavors.
+- `/prodia`: Similar to `/image`, this command also generates images from text descriptions. However, it uses a different provider (Prodia) to create the images. This could offer a different style or interpretation of the text descriptions compared to the default method.
 
-### 3. Generate Audio from Text
+- `/audio`: Converts text to speech. Users can input text, and the bot will generate an audio file that reads out the text. This can be useful for listening to descriptions, instructions, or any text content.
 
-- **Command**: `/audio`
-- **Description**: Generate audio from text. This feature allows you to convert your text inputs into spoken words, enabling you to listen to the AI's voice or use the audio for other purposes.
+- `/sintro`: Allows users to set a new text for the chat intro. This can be used to customize the greeting message that users see when they start a new chat session with the bot.
 
-### 4. Check Current Chat Introduction
+- `/svoice`: Lets users set a new voice for speech synthesis. This command enables users to choose from different voices for the AI to use when generating audio from text.
 
-- **Command**: `/intro`
-- **Description**: Check the current chat introduction. This feature allows you to view the introduction text set for the current chat, providing context and setting the tone for your interactions.
+- `/awesome`: Sets an awesome prompt as the introductory message for the chat. This could be a motivational quote, a fun fact, or any other type of prompt that might inspire or engage users in their interactions with the bot.
 
-### 5. Check Chat History
+- `/history`: Checks the chat history. This command allows users to view the history of their chats with the bot. It can be useful for users who want to review past interactions or find specific information from previous conversations.
 
-- **Command**: `/history`
-- **Description**: Check the chat history. This feature allows you to review past interactions within the chat, helping you to recall previous discussions and decisions.
+- `/settings`: Checks the current settings of the bot. This command provides users with an overview of the bot's current configuration, including any custom settings they have applied.
 
-### 6. Set New Value for Chat Introduction
+- `/reset`: Starts a new chat thread. This command resets the chat history and starts a new conversation thread. It's useful for users who want to start fresh or who want to clear their chat history for privacy reasons.
 
-- **Command**: `/sintro`
-- **Description**: Set a new value for the chat introduction. This feature enables you to customize the introduction text for the current chat, allowing you to tailor the conversation to your preferences.
+- `/myid`: Echoes the user's Telegram ID. This command is useful for users who need to know their Telegram ID for any reason, such as setting up bot admin.
 
-### 7. Start New Chat Thread
+- `/default`: Chat with AI. This command is essentially an alias for `/chat`, allowing users to initiate a chat session with the AI using a different command.
 
-- **Command**: `/reset`
-- **Description**: Start a new chat thread. This feature allows you to begin a fresh conversation with the bot, resetting the chat history and allowing for a new start.
+### Administrative Commands
 
-### 8. Echo Your Telegram ID
+- `/clear`: Clears all chats. This command is used to remove all chat data from the bot's database. It's a powerful command that should be used with caution, as it will delete all chat history.
 
-- **Command**: `/myid`
-- **Description**: Echo your Telegram ID. This feature provides you with your unique Telegram ID, useful for personalized interactions or for troubleshooting purposes and configuring admin.
+- `/total`: Shows the total number of chats available. This command provides an overview of the current chat data stored in the bot's database, helping administrators understand the volume of interactions the bot has had.
 
-### 9. Clear chat data
+- `/drop`: Clears the entire chat table. Similar to `/clear`, this command removes all data from the chat table in the database. It's a more drastic measure than `/clear`, as it completely wipes out all chat data.
 
-- **Command**: `/clear_chats`
-- **Description**: This is an administrative command for deleting all entries of chat database. The user's Telegram ID must match the one set at the [.env](https://github.com/Simatwa/pytgpt-bot/blob/7b1bfed971674be938de2b2163711f6602d54995/env#L2) config file.
-
-### 10. Check total Chat
-
-- **Command**: `/total_chats`
-- **Description**: This is an administrative command for checking total chat records. The user's Telegram ID must match the one set at the [.env](https://github.com/Simatwa/pytgpt-bot/blob/7b1bfed971674be938de2b2163711f6602d54995/env#L2) config file.
-
-### 11. Drop entire chat
-
-- **Command**: `/drop_chats`
-- **Description**: This is an administrative command that **drops** entire chat table and create new one. The user's Telegram ID must match the one set at the [.env](https://github.com/Simatwa/pytgpt-bot/blob/7b1bfed971674be938de2b2163711f6602d54995/env#L2) config file.
-
-### 12. Run sql statements
-
-- **Command**: `/sql`
-- **Description**: This is an administrative command for running **SQL STATEMENTS** against the database. The user's Telegram ID must match the one set at the [.env](https://github.com/Simatwa/pytgpt-bot/blob/7b1bfed971674be938de2b2163711f6602d54995/env#L2) config file.
-
-### 12. Default Chat with AI
-
-- **Command**: `<Any other text>`
-- **Description**: Engage in a default chat with AI. This command is a shortcut to the `/chat` command, offering a quick and straightforward way to start a conversation with the bot.
+- `/sql`: Allows running SQL statements against the database. This command provides a way for administrators to directly interact with the bot's database using SQL queries. It's a powerful tool for managing and analyzing the bot's data but should be used with caution to avoid unintended data loss or corruption.
 
 ## Support and Feedback
 

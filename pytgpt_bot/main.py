@@ -16,6 +16,9 @@ log_params = dict(
     level=loglevel,
 )
 
+awesome_prompts: dict = AwesomePrompts().get_acts()
+awesome_prompts_keys: list = list(awesome_prompts.keys())
+
 if logfile:
     log_params["filename"] = logfile
 
@@ -63,7 +66,7 @@ def handler_formatter(text: bool = False, admin: bool = False):
                 return func(message)
             except Exception as e:
                 logging.error(f"Error on function - {func.__name__} - {e}")
-                logging.debug(str(e))
+                logging.exception(e)
                 return bot.reply_to(
                     message, text="An error occured and could't complete that request."
                 )
@@ -101,6 +104,7 @@ def home(message: telebot.types.Message):
     /audio : Generate audio from text.
     /sintro : Set new text for chat intro.
     /svoice : Set new voice for speech synthesis.
+    /awesome : Set awesome prompt as intro.
     /history : Check chat history.
     /settings : Check current settings.
     /reset : Start new chat thread.
@@ -140,18 +144,68 @@ def set_chat_intro(message: telebot.types.Message):
 
 
 @bot.message_handler(commands=["svoice"])
-@handler_formatter(text=True)
-def set_chat_intro(message: telebot.types.Message):
-    """Set new value for speech voice"""
-    voice = message.text
+@handler_formatter(text=False)
+def set_new_chat_intro(message: telebot.types.Message):
+    """Set new voice for speech synthesis"""
+    user_id: str = message.from_user.id
+    markup = telebot.types.InlineKeyboardMarkup(row_width=4)
+    make_item = lambda voice: telebot.types.InlineKeyboardButton(
+        voice, callback_data=f"{voice}:{user_id}"
+    )
+    markup.add(*map(make_item, audio_generator.all_voices))
+
+    return bot.send_message(message.chat.id, "Choose a voice:", reply_markup=markup)
+
+
+@bot.callback_query_handler(
+    func=lambda call: call.data.split(":")[0] in audio_generator.all_voices
+)
+def set_new_chat_intro_callback(call: telebot.types.CallbackQuery):
+    """Set new voice for speech synthesis callback handler"""
+    bot.delete_message(call.message.chat.id, call.message.id)
+    voice, user_id = call.data.split(":")
+    message = call.message
     if not voice in audio_generator.all_voices:
         return bot.reply_to(
             message,
             f"Voice '{voice}' is not one of : `({', '.join(audio_generator.all_voices)})`",
         )
-    user = User(message.from_user.id)
+    user = User(int(user_id))
     user.update_voice(voice)
-    bot.reply_to(message, "New voice set successfully.")
+    return bot.send_message(message.chat.id, f"New voice set : `{voice}`")
+
+
+@bot.message_handler(commands=["awesome"])
+@handler_formatter(text=False)
+def set_awesome_prompt_as_chat_intro(message: telebot.types.Message):
+    """Set awesome prompt as intro"""
+    user_id: str = message.from_user.id
+    markup = telebot.types.InlineKeyboardMarkup(row_width=4)
+    make_item = lambda awesome: telebot.types.InlineKeyboardButton(
+        awesome, callback_data=f"{awesome}:{user_id}"
+    )
+    markup.add(*map(make_item, awesome_prompts_keys))
+    return bot.send_message(message.chat.id, "Choose awesome:", reply_markup=markup)
+
+
+@bot.callback_query_handler(
+    func=lambda call: call.data.split(":")[0] in awesome_prompts_keys
+)
+def set_awesome_prompt_as_chat_intro_callback_handler(
+    call: telebot.types.CallbackQuery,
+):
+    """Set awesome prompt as intro callback handler"""
+    bot.delete_message(call.message.chat.id, call.message.id)
+    awesome_prompt, user_id = call.data.split(":")
+    user = User(int(user_id))
+    user.update_intro(awesome_prompts.get(awesome_prompt))
+    return bot.send_message(
+        call.message.chat.id,
+        f"""New awesome-intro set:
+```
+{awesome_prompts.get(awesome_prompt)}
+```.""",
+    )
 
 
 @bot.message_handler(commands=["settings"])
