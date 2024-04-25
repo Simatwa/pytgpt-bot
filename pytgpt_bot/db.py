@@ -5,6 +5,7 @@ from functools import wraps
 import logging
 import typing
 from pytgpt.utils import Conversation
+from pytgpt.utils import Audio
 
 
 def exception_handler(func):
@@ -32,7 +33,9 @@ class Chat:
         CREATE TABLE IF NOT EXISTS Chat(
             Id INTEGER PRIMARY KEY,
             Intro TEXT DEFAULT "{Conversation.intro}",
-            History TEXT);
+            History TEXT DEFAULT "",
+            Voice TEXT DEFAULT "Brian"
+            );
         """
         )
         conn.commit()
@@ -150,8 +153,8 @@ class User(Chat):
         Returns:
             typing.Dict[str, typing.Union[int, str]]: Records
         """
-        id, intro, history = Chat.read(id=self.id, fetchone=True)
-        return dict(id=id, intro=intro, history=history)
+        id, intro, history, voice = Chat.read(id=self.id, fetchone=True)
+        return dict(id=id, intro=intro, history=history, voice=voice)
 
     @property
     def chat_history(self) -> typing.Union[str, None]:
@@ -162,6 +165,11 @@ class User(Chat):
     def chat_intro(self) -> str:
         """User's chat intro"""
         return self.record.get("intro")
+
+    @property
+    def chat_voice(self) -> typing.Union[str, None]:
+        """User's speech voice"""
+        return self.record.get("voice")
 
     def update_history(self, data: str):
         """Update chat history
@@ -184,6 +192,18 @@ class User(Chat):
         Chat.update(
             self.id,
             field="intro",
+            data=data,
+        )
+
+    def update_voice(self, data: str):
+        """Update speech voice
+
+        Args:
+            data (str): New voice.
+        """
+        Chat.update(
+            self.id,
+            field="voice",
             data=data,
         )
 

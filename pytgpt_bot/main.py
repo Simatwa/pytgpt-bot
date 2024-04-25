@@ -63,6 +63,7 @@ def handler_formatter(text: bool = False, admin: bool = False):
                 return func(message)
             except Exception as e:
                 logging.error(f"Error on function - {func.__name__} - {e}")
+                logging.debug(str(e))
                 return bot.reply_to(
                     message, text="An error occured and could't complete that request."
                 )
@@ -71,7 +72,8 @@ def handler_formatter(text: bool = False, admin: bool = False):
 
     return main
 
-def send_long_text(message:telebot.types.Message, text:str):
+
+def send_long_text(message: telebot.types.Message, text: str):
     """Send texts longer than 4096 long
 
     Args:
@@ -82,9 +84,10 @@ def send_long_text(message:telebot.types.Message, text:str):
     if len(text) <= max_length:
         bot.send_message(message.chat.id, text)
     else:
-        parts = [text[i:i+max_length] for i in range(0, len(text), max_length)]
+        parts = [text[i : i + max_length] for i in range(0, len(text), max_length)]
         for part in parts:
             bot.send_message(message.chat.id, part)
+
 
 @bot.message_handler(commands=["help", "start"])
 @handler_formatter()
@@ -96,9 +99,10 @@ def home(message: telebot.types.Message):
     /imager : Generate image from text. (default)
     /prodia : Generate image from text. (Prodia)
     /audio : Generate audio from text.
-    /intro : Check current chat intro.
+    /sintro : Set new text for chat intro.
+    /svoice : Set new voice for speech synthesis.
     /history : Check chat history.
-    /sintro : Set new value for chat intro.
+    /settings : Check current settings.
     /reset : Start new chat thread.
     /myid : Echo your Telegram ID.
     /default : Chat with AI.
@@ -135,18 +139,39 @@ def set_chat_intro(message: telebot.types.Message):
     bot.reply_to(message, "New intro set successfully.")
 
 
-@bot.message_handler(commands=["intro"])
-@handler_formatter()
-def check_chat_intro(message: telebot.types.Message):
+@bot.message_handler(commands=["svoice"])
+@handler_formatter(text=True)
+def set_chat_intro(message: telebot.types.Message):
+    """Set new value for speech voice"""
+    voice = message.text
+    if not voice in audio_generator.all_voices:
+        return bot.reply_to(
+            message,
+            f"Voice '{voice}' is not one of : `({', '.join(audio_generator.all_voices)})`",
+        )
     user = User(message.from_user.id)
-    return bot.reply_to(message, user.chat_intro)
+    user.update_voice(voice)
+    bot.reply_to(message, "New voice set successfully.")
+
+
+@bot.message_handler(commands=["settings"])
+@handler_formatter()
+def check_current_settings(message: telebot.types.Message):
+    """Check current user settings"""
+    user = User(message.from_user.id)
+    current_user_settings = f"""
+    **Chat Length** : `{len(user.chat_history)}`
+    **Speech Voice** : `{user.chat_voice}`
+    **Chat Intro** : `{user.chat_intro}`
+    """
+    return bot.reply_to(message, current_user_settings)
 
 
 @bot.message_handler(commands=["history"])
 @handler_formatter()
 def check_chat_history(message: telebot.types.Message):
     user = User(message.from_user.id)
-    return send_long_text(message,  user.chat_history or "Your chat history is empty.")
+    return send_long_text(message, user.chat_history or "Your chat history is empty.")
 
 
 @bot.message_handler(commands=["image", "img"])
@@ -183,7 +208,7 @@ def text_to_audio(message: telebot.types.Message):
     """Convert text to audio"""
     audio_chunk = audio_generator.text_to_audio(
         message=message.text,
-        voice=voice,
+        voice=User(message.chat.id).chat_voice,
         timeout=timeout,
     )
     return bot.send_audio(message.chat.id, audio=audio_chunk, caption=message.text)
