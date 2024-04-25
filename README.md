@@ -53,7 +53,7 @@ Alternatively, using CLI interface::
 
 ### Commands
 
-- `/help`: This command displays the help information, providing users with a list of available commands and a brief description of what each command does. It's a useful way for users to quickly understand how to interact with the bot.
+- `/start`: This command displays the help information, providing users with a list of available commands and a brief description of what each command does. It's a useful way for users to quickly understand how to interact with the bot.
 
 - `/chat`: Allows users to engage in natural language conversations with the AI. This command initiates a chat session where users can ask questions, make requests, or simply chat with the AI.
 
@@ -81,6 +81,9 @@ Alternatively, using CLI interface::
 
 ### Administrative Commands
 
+
+### Administrative Commands
+
 - `/clear`: Clears all chats. This command is used to remove all chat data from the bot's database. It's a powerful command that should be used with caution, as it will delete all chat history.
 
 - `/total`: Shows the total number of chats available. This command provides an overview of the current chat data stored in the bot's database, helping administrators understand the volume of interactions the bot has had.
@@ -88,6 +91,8 @@ Alternatively, using CLI interface::
 - `/drop`: Clears the entire chat table. Similar to `/clear`, this command removes all data from the chat table in the database. It's a more drastic measure than `/clear`, as it completely wipes out all chat data.
 
 - `/sql`: Allows running SQL statements against the database. This command provides a way for administrators to directly interact with the bot's database using SQL queries. It's a powerful tool for managing and analyzing the bot's data but should be used with caution to avoid unintended data loss or corruption.
+
+- `/logs`: Checks the logs. This command is used to access the bot's logs, which can provide insights into the bot's activity, errors, and user interactions. It's a valuable tool for monitoring and troubleshooting the bot's performance.
 
 ## Support and Feedback
 

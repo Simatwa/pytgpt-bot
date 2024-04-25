@@ -7,8 +7,9 @@ from pytgpt.utils import AwesomePrompts
 from functools import wraps
 import logging
 
-from .config import bot_token, max_tokens, timeout, voice, loglevel, logfile, admin_id
+from .config import bot_token, max_tokens, timeout, loglevel, logfile, admin_id
 from .db import User, Chat
+from . import __version__
 
 log_params = dict(
     format="%(asctime)s : %(levelname)s - %(message)s",
@@ -35,6 +36,7 @@ admin_commands = """
     /total : Total chats available.
     /drop : Clear entire chat table.
     /sql : Run sql statements against database.
+    /logs : View bot logs.
 """
 
 
@@ -55,20 +57,30 @@ def handler_formatter(text: bool = False, admin: bool = False):
                     f"Serving user [{message.from_user.id}] ({message.from_user.full_name}) - Function [{func.__name__}]"
                 )
                 if admin and not User(message.from_user.id).is_admin:
-                    return bot.reply_to(message, "Action restricted to admins only!")
+                    return bot.reply_to(
+                        message,
+                        "Action restricted to admins only!",
+                        reply_markup=make_delete_markup(message),
+                    )
 
                 if message.text and message.text.startswith("/"):
                     message.text = " ".join(message.text.split(" ")[1:])
 
                 if text and not message.text:
-                    return bot.reply_to(message, "Text is required.")
+                    return bot.reply_to(
+                        message,
+                        "Text is required.",
+                        reply_markup=make_delete_markup(message),
+                    )
 
                 return func(message)
             except Exception as e:
                 logging.error(f"Error on function - {func.__name__} - {e}")
                 logging.exception(e)
-                return bot.reply_to(
-                    message, text="An error occured and could't complete that request."
+                bot.reply_to(
+                    message,
+                    text="An error occured and could't complete that request.",
+                    reply_markup=make_delete_markup(message),
                 )
 
         return decorator
@@ -76,28 +88,68 @@ def handler_formatter(text: bool = False, admin: bool = False):
     return main
 
 
-def send_long_text(message: telebot.types.Message, text: str):
+def make_delete_markup(
+    message: telebot.types.Message,
+) -> telebot.types.InlineKeyboardMarkup:
+    """Creates delete markup
+
+    Args:
+        message (telebot.types.Message):
+    """
+    markup = telebot.types.InlineKeyboardMarkup(row_width=1)
+    callback_button = telebot.types.InlineKeyboardButton(
+        text="🗑️", callback_data=f"delete:{message.chat.id}:{message.id}"
+    )
+    markup.add(callback_button)
+    return markup
+
+
+def send_and_add_delete_button(
+    message: telebot.types.Message, text: str, as_reply: bool = False
+):
+    """Add send text and add delete inlineKeyboard item
+
+    Args:
+        message (telebot.types.Message):
+        text (str): Tag
+        as_reply (bool): Respond as a reply_to. Defaults to False.
+
+    Returns:
+        _type_: _description_
+    """
+    markup = make_delete_markup(message)
+    return (
+        bot.reply_to(message, text=text, reply_markup=markup)
+        if as_reply
+        else bot.send_message(message.chat.id, text, reply_markup=markup)
+    )
+
+
+def send_long_text(message: telebot.types.Message, text: str, add_delete: bool = False):
     """Send texts longer than 4096 long
 
     Args:
         message (telebot.types.Message): Message object.
         text (str): Text to be sent.
+        add_delete (bool). Add delete button. Defaults to False.
     """
     max_length = 4096
+    take_action = send_and_add_delete_button if add_delete else bot.send_message
     if len(text) <= max_length:
-        bot.send_message(message.chat.id, text)
+        # bot.send_message(message.chat.id, text)
+        take_action(message if add_delete else message.chat.id, text)
     else:
         parts = [text[i : i + max_length] for i in range(0, len(text), max_length)]
         for part in parts:
-            bot.send_message(message.chat.id, part)
+            take_action(message if add_delete else message.chat.id, part)
 
 
 @bot.message_handler(commands=["help", "start"])
 @handler_formatter()
 def home(message: telebot.types.Message):
-    """
-    Welcome to [pytgpt-bot](https://github.com/Simatwa/pytgpt-bot).
-    /help : Show this help info.
+    f"""
+    Welcome to [pytgpt-bot](https://github.com/Simatwa/pytgpt-bot) v{__version__}.
+    /start : Show this help info.
     /chat : Chat with AI.
     /imager : Generate image from text. (default)
     /prodia : Generate image from text. (Prodia)
@@ -117,6 +169,7 @@ def home(message: telebot.types.Message):
         text=(
             home.__doc__ + admin_commands if User(message.from_user.id).is_admin else ""
         ),
+        reply_markup=make_delete_markup(message),
     )
 
 
@@ -126,6 +179,7 @@ def echo_user_id(message: telebot.types.Message):
     return bot.reply_to(
         message,
         f"Greetings {message.from_user.first_name}. Your Telegram ID is {message.from_user.id}.",
+        reply_markup=make_delete_markup(message),
     )
 
 
@@ -140,7 +194,9 @@ def set_chat_intro(message: telebot.types.Message):
         )
     user = User(message.from_user.id)
     user.update_intro(intro)
-    bot.reply_to(message, "New intro set successfully.")
+    return bot.reply_to(
+        message, "New intro set successfully.", reply_markup=make_delete_markup(message)
+    )
 
 
 @bot.message_handler(commands=["svoice"])
@@ -153,7 +209,7 @@ def set_new_chat_intro(message: telebot.types.Message):
         voice, callback_data=f"{voice}:{user_id}"
     )
     markup.add(*map(make_item, audio_generator.all_voices))
-
+    bot.delete_message(message.chat.id, message.id)
     return bot.send_message(message.chat.id, "Choose a voice:", reply_markup=markup)
 
 
@@ -165,14 +221,18 @@ def set_new_chat_intro_callback(call: telebot.types.CallbackQuery):
     bot.delete_message(call.message.chat.id, call.message.id)
     voice, user_id = call.data.split(":")
     message = call.message
+    markup = make_delete_markup(call.message)
     if not voice in audio_generator.all_voices:
         return bot.reply_to(
             message,
             f"Voice '{voice}' is not one of : `({', '.join(audio_generator.all_voices)})`",
+            reply_markup=markup,
         )
     user = User(int(user_id))
     user.update_voice(voice)
-    return bot.send_message(message.chat.id, f"New voice set : `{voice}`")
+    return bot.send_message(
+        message.chat.id, f"New voice set : `{voice}`", reply_markup=markup
+    )
 
 
 @bot.message_handler(commands=["awesome"])
@@ -185,6 +245,7 @@ def set_awesome_prompt_as_chat_intro(message: telebot.types.Message):
         awesome, callback_data=f"{awesome}:{user_id}"
     )
     markup.add(*map(make_item, awesome_prompts_keys))
+    bot.delete_message(message.chat.id, message.id)
     return bot.send_message(message.chat.id, "Choose awesome:", reply_markup=markup)
 
 
@@ -205,6 +266,7 @@ def set_awesome_prompt_as_chat_intro_callback_handler(
 ```
 {awesome_prompts.get(awesome_prompt)}
 ```.""",
+        reply_markup=make_delete_markup(call.message),
     )
 
 
@@ -218,14 +280,18 @@ def check_current_settings(message: telebot.types.Message):
     **Speech Voice** : `{user.chat_voice}`
     **Chat Intro** : `{user.chat_intro}`
     """
-    return bot.reply_to(message, current_user_settings)
+    return bot.reply_to(
+        message, current_user_settings, reply_markup=make_delete_markup(message)
+    )
 
 
 @bot.message_handler(commands=["history"])
 @handler_formatter()
 def check_chat_history(message: telebot.types.Message):
     user = User(message.from_user.id)
-    return send_long_text(message, user.chat_history or "Your chat history is empty.")
+    return send_long_text(
+        message, user.chat_history or "Your chat history is empty.", add_delete=True
+    )
 
 
 @bot.message_handler(commands=["image", "img"])
@@ -233,7 +299,7 @@ def check_chat_history(message: telebot.types.Message):
 def text_to_image_default(message: telebot.types.Message):
     """Generate image using `image`"""
     generator_obj = image_generator.Imager(
-        timeout=30,
+        timeout=timeout,
     )
     return bot.send_photo(
         message.chat.id,
@@ -241,6 +307,7 @@ def text_to_image_default(message: telebot.types.Message):
             message.text,
         )[0],
         caption=message.text,
+        reply_markup=make_delete_markup(message),
     )
 
 
@@ -253,6 +320,7 @@ def text_to_image_prodia(message: telebot.types.Message):
         message.chat.id,
         photo=generator_obj.generate(message.text)[0],
         caption=message.text,
+        reply_markup=make_delete_markup(message),
     )
 
 
@@ -265,7 +333,12 @@ def text_to_audio(message: telebot.types.Message):
         voice=User(message.chat.id).chat_voice,
         timeout=timeout,
     )
-    return bot.send_audio(message.chat.id, audio=audio_chunk, caption=message.text)
+    return bot.send_audio(
+        message.chat.id,
+        audio=audio_chunk,
+        caption=message.text,
+        reply_markup=make_delete_markup(message),
+    )
 
 
 @bot.message_handler(commands=["reset"])
@@ -275,8 +348,7 @@ def reset_chat(message: telebot.types.Message):
     user = User(message.from_user.id)
     user.delete()
     return bot.reply_to(
-        message,
-        "New chat instance created.",
+        message, "New chat instance created.", reply_markup=make_delete_markup(message)
     )
 
 
@@ -288,7 +360,9 @@ def clear_chats(message: telebot.types.Message):
     logging.warning(
         f"Clearing Chats - [{message.from_user.full_name}] ({message.from_user.id}, {message.from_user.username})"
     )
-    return bot.reply_to(message, "Chats cleared successfully.")
+    return bot.reply_to(
+        message, "Chats cleared successfully.", reply_markup=make_delete_markup(message)
+    )
 
 
 @bot.message_handler(commands=["total", "total_chats"])
@@ -299,7 +373,11 @@ def total_chats_query(message: telebot.types.Message):
     logging.warning(
         f"Total Chats query - [{message.from_user.full_name}] ({message.from_user.id}, {message.from_user.username})"
     )
-    return bot.reply_to(message, f"Total Chats **{total_chats}**")
+    return bot.reply_to(
+        message,
+        f"Total Chats **{total_chats}**",
+        reply_markup=make_delete_markup(message),
+    )
 
 
 @bot.message_handler(commands=["drop", "drop_chats"])
@@ -311,7 +389,11 @@ def total_chats_table(message: telebot.types.Message):
     )
     Chat.query("DROP TABLE CHAT")
     Chat.initialize()
-    return bot.reply_to(message, f"Chat table dropped and new one created.")
+    return bot.reply_to(
+        message,
+        f"Chat table dropped and new one created.",
+        reply_markup=make_delete_markup(message),
+    )
 
 
 @bot.message_handler(commands=["sql"])
@@ -332,7 +414,18 @@ def run_sql_statement(message: telebot.types.Message):
         response = f"ERROR : {e.args[1] if e.args and len(e.args)>1 else e}"
 
     finally:
-        return send_long_text(message, response)
+        return send_long_text(message, response, add_delete=True)
+
+
+@bot.message_handler(commands=["logs"])
+@handler_formatter(admin=True)
+def check_current_settings(message: telebot.types.Message):
+    """View bot logs"""
+    if not logfile:
+        return bot.reply_to(message, "Logfile not specified!")
+    with open(logfile, encoding="utf-8") as fh:
+        contents: str = fh.read()
+    return send_long_text(message, contents, add_delete=True)
 
 
 @bot.message_handler(content_types=["text"])
@@ -359,4 +452,20 @@ def text_chat(message: telebot.types.Message):
 
 @bot.message_handler(func=lambda val: True)
 def any_other_action(message):
-    return bot.reply_to(message, home.__doc__)
+    return bot.reply_to(message, home.__doc__, reply_markup=make_delete_markup(message))
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("delete:"))
+def delete_callback_handler(
+    call: telebot.types.CallbackQuery,
+):
+    """Delete callback handler"""
+    action, trigger_chat_id, trigger_message_id = call.data.split(":")
+    try:
+        bot.delete_message(trigger_chat_id, trigger_message_id)
+    except:
+        pass
+    try:
+        bot.delete_message(call.message.chat.id, call.message.id)
+    except:
+        pass

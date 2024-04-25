@@ -11,7 +11,6 @@ bot_token: str = environ.get("token")
 admin_id: int = int(environ.get("admin-id", 1234567))
 max_tokens: int = int(environ.get("max-tokens", 600))
 timeout: int = int(environ.get("timeout", 30))
-voice: str = environ.get("voice", "Brian")
 loglevel: int = int(environ.get("loglevel", 20))
 logfile = environ.get("logfile")
 
