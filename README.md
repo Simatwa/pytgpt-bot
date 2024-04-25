@@ -104,7 +104,12 @@ Alternatively, using CLI interface::
 - **Command**: `/total_chats`
 - **Description**: This is an administrative command for checking total chat records. The user's Telegram ID must match the one set at the [.env](https://github.com/Simatwa/pytgpt-bot/blob/7b1bfed971674be938de2b2163711f6602d54995/env#L2) config file.
 
-### 11. Run sql statements
+### 11. Drop entire chat
+
+- **Command**: `/drop_chats`
+- **Description**: This is an administrative command that **drops** entire chat table and create new one. The user's Telegram ID must match the one set at the [.env](https://github.com/Simatwa/pytgpt-bot/blob/7b1bfed971674be938de2b2163711f6602d54995/env#L2) config file.
+
+### 12. Run sql statements
 
 - **Command**: `/sql`
 - **Description**: This is an administrative command for running **SQL STATEMENTS** against the database. The user's Telegram ID must match the one set at the [.env](https://github.com/Simatwa/pytgpt-bot/blob/7b1bfed971674be938de2b2163711f6602d54995/env#L2) config file.
