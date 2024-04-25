@@ -33,7 +33,12 @@ setup(
             "pytgpt-bot = pytgpt_bot.cli:entry",
         ],
     },
-    install_requires=read_contents("requirements.txt").strip().split("\n"),
+    install_requires=[
+        "pytelegrambotapi==4.17.0",
+        "python-tgpt==0.6.6",
+        "python-dotenv==1.0.0",
+        "appdirs==1.4.4",
+        ],
     python_requires=">=3.10",
     keywords=[
         "ai",
