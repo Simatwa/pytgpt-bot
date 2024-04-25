@@ -52,7 +52,7 @@ def handler_formatter(func):
 @handler_formatter
 def home(message: telebot.types.Message):
     """
-    Welcome to [pytgpt](https://github.com/Simatwa/python-tgpt).
+    Welcome to [pytgpt-bot](https://github.com/Simatwa/pytgpt-bot).
     /help : Show this help info.
     /chat : Chat with AI.
     /imager : Generate image from text. (default)
@@ -60,7 +60,7 @@ def home(message: telebot.types.Message):
     /audio : Generate audio from text.
     /intro : Check current chat intro.
     /history : Check chat history.
-    /sintro : Set new value for chat intro
+    /sintro : Set new value for chat intro.
     /reset : Start new chat thread.
     /myid : Echo your Telegram ID.
     /default : Chat with AI.
