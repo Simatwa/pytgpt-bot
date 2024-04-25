@@ -1,4 +1,4 @@
-telegram-token=<Your-telegram-token>
+token=<Your-telegram-token>
 admin-id=12345678
 max-tokens=600
 timeout=30

@@ -1,13 +1,11 @@
 <p align="center">
 <a href="https://github.com/Simatwa/pytgpt-bot/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/static/v1?logo=MIT&color=Blue&message=MIT&label=License"/></a>
-<a href="https://github.com/psf/black"><img alt="Black" src="https://img.shields.io/static/v1?logo=Black&label=Code-style&message=Black"/></a>
-<!-- 
+<a href="#"><img alt="Python version" src="https://img.shields.io/pypi/pyversions/pytgpt"/></a>
+<a href="https://pypi.org/project/pytgpt-bot"><img alt="PyPi" src="https://img.shields.io/pypi/v/pytgpt-bot?color=green"/></a>
+<a href="https://github.com/psf/black"><img alt="Black" src="https://img.shields.io/badge/code%20style-black-000000.svg"/></a>
 <a href="https://pepy.tech/project/pytgpt-bot"><img src="https://static.pepy.tech/personalized-badge/pytgpt-bot?period=total&units=international_system&left_color=grey&right_color=green&left_text=Downloads" alt="Downloads"></a>
-<a href="https://github.com/Simatwa/pytgpt-bot/releases/latest"><img src="https://img.shields.io/github/downloads/Simatwa/pytgpt-bot/total?label=Asset%20Downloads&color=success" alt="Downloads"></img></a>
--->
-<a href="https://github.com/Simatwa/pytgpt-bot/releases"><img src="https://img.shields.io/github/v/release/Simatwa/pytgpt-bot?color=success&label=Release&logo=github" alt="Latest release"></img></a>
 <!--
-<a href="https://github.com/Simatwa/pytgpt-bot/releases"><img src="https://img.shields.io/github/release-date/Simatwa/pytgpt-bot?label=Release date&logo=github" alt="release date"></img></a>
+<a href="https://github.com/Simatwa/pytgpt-bot/releases"><img src="https://img.shields.io/github/v/release/Simatwa/pytgpt-bot?color=success&label=Release&logo=github" alt="Latest release"></img></a> 
 -->
 <a href="https://hits.seeyoufarm.com"><img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com/Simatwa/pytgpt-bot"/></a>
 <a href="https://wakatime.com/badge/github/Simatwa/pytgpt-bot"><img src="https://wakatime.com/badge/github/Simatwa/pytgpt-bot.svg" alt="wakatime"></a>
@@ -19,14 +17,26 @@ Welcome to <a href="https://github.com/Simatwa/pytgpt-bot">pytgpt-bot</a>
 
 This is a Telegram bot based on [python-tgpt](https://github.com/Simatwa/python-tgpt), a powerful tool designed to enhance your interactions with AI. This bot is built on the robust foundation of the `pyTelegramBotAPI` and offers a wide range of features to make your experience with AI more engaging and interactive. Whether you're looking to chat with AI, generate images and audio from text, `pytgpt-bot` has got you covered.
 
+## Prerequisites
+
+- [x] [Python>=3.10](https://python.org)
+
 ## Installation
 
-Clone repo and install dependencies.
+1. From Source
+
+Clone repo and install.
 
 ```bash
-git clone https://github.com/Simatwa/pytgpt-bot
+git clone https://github.com/Simatwa/pytgpt-bot.git
 cd pytgpt-bot
-pip install -r requirements.txt
+pip install .
+```
+
+2. From Pypi *(recommended)*
+
+```sh
+pip install pytgpt-bot
 ```
 
 ## Usage
@@ -34,6 +44,10 @@ pip install -r requirements.txt
 Before getting started, ensure you've your Telegram bot token. If that's not the case then purpose to secure one from [@BotFather](https://telegram.me/BotFather).
 
 Proceed to fill the [env](env) configuration file as per the needs and then rename it `.env` before firing up the server `python3 run.py`.
+
+Alternatively, using CLI interface::
+
+   `$ pytgpt-bot run <Your Telegram Token>`
 
 ## Features
 
@@ -80,15 +94,15 @@ Proceed to fill the [env](env) configuration file as per the needs and then rena
 - **Command**: `/myid`
 - **Description**: Echo your Telegram ID. This feature provides you with your unique Telegram ID, useful for personalized interactions or for troubleshooting purposes and configuring admin.
 
-### 9. Default Chat with AI
-
-- **Command**: `/default`
-- **Description**: Engage in a default chat with AI. This command is a shortcut to the `/chat` command, offering a quick and straightforward way to start a conversation with the bot.
-
-### 10. Clear chat data
+### 9. Clear chat data
 
 - **Command**: `/clear_database`
 - **Description**: This is an administrative command for deleting all entries of chat database. The user's Telegram ID must match the one set at the [.env](https://github.com/Simatwa/pytgpt-bot/blob/7b1bfed971674be938de2b2163711f6602d54995/env#L2) config file.
+
+### 10. Default Chat with AI
+
+- **Command**: `<Any other text>`
+- **Description**: Engage in a default chat with AI. This command is a shortcut to the `/chat` command, offering a quick and straightforward way to start a conversation with the bot.
 
 ## Support and Feedback
 

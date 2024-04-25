@@ -5,9 +5,9 @@ from pytgpt.utils import api_static_dir
 
 load_dotenv()
 
-assert environ.get("telegram-token"), "Export telegram-token to the environment"
+assert environ.get("token"), "Export bot's token to the environment"
 
-bot_token: str = environ.get("telegram-token")
+bot_token: str = environ.get("token")
 admin_id: int = int(environ.get("admin-id", 1234567))
 max_tokens: int = int(environ.get("max-tokens", 600))
 timeout: int = int(environ.get("timeout", 30))
