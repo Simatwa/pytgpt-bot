@@ -59,7 +59,7 @@ def handler_formatter(text: bool = False, admin: bool = False):
                 if admin and not User(message.from_user.id).is_admin:
                     return bot.reply_to(
                         message,
-                        "Action restricted to admins only!",
+                        "Action restricted to admins only❗️",
                         reply_markup=make_delete_markup(message),
                     )
 
@@ -69,7 +69,7 @@ def handler_formatter(text: bool = False, admin: bool = False):
                 if text and not message.text:
                     return bot.reply_to(
                         message,
-                        "Text is required.",
+                        "Text is required❗️❗️.",
                         reply_markup=make_delete_markup(message),
                     )
 
@@ -79,7 +79,7 @@ def handler_formatter(text: bool = False, admin: bool = False):
                 logging.exception(e)
                 bot.reply_to(
                     message,
-                    text="An error occured and could't complete that request.",
+                    text="😔 An error occured and could't complete that request ❗️❗️❗️",
                     reply_markup=make_delete_markup(message),
                 )
 
@@ -290,7 +290,7 @@ def check_current_settings(message: telebot.types.Message):
 def check_chat_history(message: telebot.types.Message):
     user = User(message.from_user.id)
     return send_long_text(
-        message, user.chat_history or "Your chat history is empty.", add_delete=True
+        message, user.chat_history or "Your chat history is empty ❗️", add_delete=True
     )
 
 

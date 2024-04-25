@@ -5,7 +5,7 @@ from pytgpt.utils import api_static_dir
 
 load_dotenv()
 
-assert environ.get("token"), "Export bot's token to the environment"
+assert environ.get("token"), "Export bot's token to the environment 😠"
 
 bot_token: str = environ.get("token")
 admin_id: int = int(environ.get("admin-id", 1234567))
