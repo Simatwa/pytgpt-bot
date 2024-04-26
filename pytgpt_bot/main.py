@@ -364,9 +364,10 @@ def text_to_image_prodia(message: telebot.types.Message):
 @handler_formatter(text=True)
 def text_to_audio(message: telebot.types.Message):
     """Convert text to audio"""
+    voice = User(message.chat.id).chat_voice
     audio_chunk = audio_generator.text_to_audio(
         message=message.text,
-        voice=User(message.chat.id).chat_voice,
+        voice=voice,
         timeout=timeout,
     )
     return bot.send_audio(
@@ -374,6 +375,8 @@ def text_to_audio(message: telebot.types.Message):
         audio=audio_chunk,
         caption=message.text,
         reply_markup=make_delete_markup(message),
+        performer=voice,
+        title="Text-to-Audio",
     )
 
 
