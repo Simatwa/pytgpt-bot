@@ -84,7 +84,7 @@ This section provides detailed instructions on how to use the various commands a
 
 - **/myid**: Echoes the user's Telegram ID. This command is useful for users who need to know their Telegram ID for various purposes, such as setting up bot admin.
 
-- `any other text>`: An alias for `/chat`, allowing users to continue with chatting.
+- `any other text`: An alias for `/chat`, allowing users to continue with chatting.
 
 
 ### Administrative Commands
