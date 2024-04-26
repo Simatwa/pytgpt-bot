@@ -436,7 +436,7 @@ def text_to_audio(message: telebot.types.Message):
         caption=message.text,
         reply_markup=make_delete_markup(message),
         performer=voice,
-        title="Text-to-Audio",
+        title="Text-to-Voice",
     )
 
 
