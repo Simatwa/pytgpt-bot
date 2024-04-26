@@ -45,7 +45,7 @@ Before getting started, ensure you've your Telegram bot token. If that's not the
 
 Proceed to fill the [env](env) configuration file as per the needs and then rename it `.env` before firing up the bot `python3 run.py`.
 
-Alternatively, using CLI interface::
+Alternatively, using CLI:
 
    `$ pytgpt-bot run <Your Telegram Token>`
 
@@ -78,13 +78,13 @@ This section provides detailed instructions on how to use the various commands a
 
 - **/history**: Provides users with the ability to view the history of their chats with the bot. This command is useful for reviewing past interactions or finding specific information from previous conversations.
 
-- **/provider**: Offers an overview of the bot's current configuration, including any custom settings applied by the user.
+- **/check**: Offers an overview of the bot's current configuration, including any custom settings applied by the user.
 
 - **/reset**: Resets the chat history and starts a new conversation thread. This command is useful for users who wish to start fresh or clear their chat history for privacy reasons.
 
 - **/myid**: Echoes the user's Telegram ID. This command is useful for users who need to know their Telegram ID for various purposes, such as setting up bot admin.
 
-- `any other text or command>`: An alias for `/chat`, allowing users to continue with text chat.
+- `any other text>`: An alias for `/chat`, allowing users to continue with chatting.
 
 
 ### Administrative Commands

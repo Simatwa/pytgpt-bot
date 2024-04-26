@@ -78,7 +78,7 @@ admin_commands = (
     "/clear : Clear all chats 🧹\n"
     "/total : Total chats available 📊\n"
     "/drop : Clear entire chat table and bot logs 🗑️\n"
-    "/sql : Run sql statements against database 📊\n"
+    "/sql : Run sql statements against database ⏳\n"
     "/logs : View bot logs 📜"
 )
 
