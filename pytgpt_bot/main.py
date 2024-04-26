@@ -5,6 +5,7 @@ from pytgpt.utils import Conversation
 from pytgpt.utils import AwesomePrompts
 from functools import wraps
 import logging
+import json
 
 from .config import (
     bot_token,
@@ -310,12 +311,12 @@ def set_awesome_prompt_as_chat_intro_callback_handler(
 def check_current_settings(message: telebot.types.Message):
     """Check current user settings"""
     user_record: dict = User(message.from_user.id).record
-    current_user_settings = f"""
-    **Chat Length** : `{len(user_record.get('history'))}`
-    **Speech Voice** : `{user_record.get('voice')}`
-    **Chat provider** : {user_record.get('provider')}
-    **Chat Intro** : `{user_record.get('intro')}`
-    """
+    current_user_settings = (
+        f"Chat Length : `{len(user_record.get('history'))}`\n"
+        f"Speech Voice : `{user_record.get('voice')}`\n"
+        f"Chat Provider : `{user_record.get('provider')}`\n"
+        f"Chat Intro : `{user_record.get('intro')}`"
+    )
     return bot.reply_to(
         message, current_user_settings, reply_markup=make_delete_markup(message)
     )
