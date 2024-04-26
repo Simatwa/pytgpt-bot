@@ -68,7 +68,7 @@ logging.info(f"Bot started sucessfully. Admin ID - [{admin_id}]")
 admin_commands = """
     /clear : Clear all chats.
     /total : Total chats available.
-    /drop : Clear entire chat table.
+    /drop : Clear entire chat table and bot logs.
     /sql : Run sql statements against database.
     /logs : View bot logs.
 """
@@ -182,7 +182,7 @@ def send_long_text(message: telebot.types.Message, text: str, add_delete: bool =
 @handler_formatter()
 def home(message: telebot.types.Message):
     """
-    Welcome to [pytgpt-bot](https://github.com/Simatwa/pytgpt-bot).
+    Welcome to [pytgpt-bot](https://github.com/Simatwa/pytgpt-bot). Freely interact with multiple LLM providers.
     /start : Show this help info.
     /chat : Chat with AI.
     /image : Generate image from text. (default)
@@ -444,6 +444,11 @@ def total_chats_query(message: telebot.types.Message):
 @handler_formatter(admin=True)
 def total_chats_table(message: telebot.types.Message):
     """Drop chat table and create new"""
+    if logfile:
+        with open(logfile, "w") as fh:
+            fh.write(
+                f"ADMIN CLEARED LOGS & DROPPED CHAT TABLE [{message.from_user.id}] - ({message.from_user.full_name})\n"
+            )
     logging.warning(
         f"Dropping Chat table and reinitialize - [{message.from_user.full_name}] ({message.from_user.id}, {message.from_user.username})"
     )
