@@ -1,6 +1,8 @@
 import sqlite3
 from .config import admin_id
 from .config import path_to_db
+from .config import provider
+from .config import voice
 from functools import wraps
 import logging
 import typing
@@ -34,8 +36,8 @@ class Chat:
             Id INTEGER PRIMARY KEY,
             Intro TEXT DEFAULT "{Conversation.intro}",
             History TEXT DEFAULT "" NOT NULL,
-            Voice TEXT DEFAULT "Brian" NOT NULL,
-            Provider TEXT DEFAULT "auto" NOT NULL
+            Voice TEXT DEFAULT "{voice}" NOT NULL,
+            Provider TEXT DEFAULT "{provider}" NOT NULL
             );
         """
         )

@@ -62,13 +62,11 @@ def bot():
     "-a", "--admin-id", type=click.INT, help="Admin's Telegram user ID", default=12345
 )
 @click.option(
-    '-p',
-    '--provider',
-    type=click.Choice(
-        provider_keys
-    ),
-    help="tgpt-based llm providers",
-    default="auto"
+    "-p",
+    "--provider",
+    type=click.Choice(provider_keys),
+    help="Default tgpt-based llm provider",
+    default="auto",
 )
 @click.help_option("-h", "--help")
 def run(**kwargs):

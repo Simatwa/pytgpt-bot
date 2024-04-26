@@ -5,3 +5,4 @@ max-tokens=600
 timeout=30
 loglevel=20
 logfile=pytgpt-bot.log
+voice=Brian

@@ -21,10 +21,6 @@ from .utils import provider_map
 
 chosen_provider: str = provider_map.get(provider)
 
-assert (
-    chosen_provider
-), f"Provider '{provider}' is not one of {', '.join(provider_keys)}"
-
 log_params = dict(
     format="%(asctime)s : %(levelname)s - %(message)s",
     datefmt="%d-%b-%Y %H:%M:%S",
@@ -422,7 +418,7 @@ def total_chats_query(message: telebot.types.Message):
 
 @bot.message_handler(commands=["drop", "drop_chats"])
 @handler_formatter(admin=True)
-def total_chats_table(message: telebot.types.Message):
+def total_chats_table_and_logs(message: telebot.types.Message):
     """Drop chat table and create new"""
     if logfile:
         with open(logfile, "w") as fh:
@@ -436,7 +432,7 @@ def total_chats_table(message: telebot.types.Message):
     Chat.initialize()
     return bot.reply_to(
         message,
-        f"Chat table dropped and new one created.",
+        f"Chat table and bot logs dropped and new one created.",
         reply_markup=make_delete_markup(message),
     )
 
@@ -471,28 +467,6 @@ def check_current_settings(message: telebot.types.Message):
     with open(logfile, encoding="utf-8") as fh:
         contents: str = fh.read()
     return send_long_text(message, contents, add_delete=True)
-
-
-@bot.message_handler(content_types=["chat"])
-@handler_formatter(text=True)
-def text_chat(message: telebot.types.Message):
-    """Text generation - provider of choice"""
-    user = User(message.from_user.id)
-    chat_record = user.record
-    conversation = Conversation(max_tokens=max_tokens)
-    conversation.chat_history = chat_record.get("history") or ""
-    conversation_prompt = conversation.gen_complete_prompt(
-        message.text, intro=chat_record.get("intro")
-    )
-    bot.send_chat_action(message.chat.id, "typing")
-    ai_response = text_generator.AUTO(is_conversation=False, timeout=timeout).chat(
-        conversation_prompt
-    )
-    conversation.update_chat_history(
-        prompt=message.text, response=ai_response, force=True
-    )
-    user.update_history(conversation.chat_history)
-    return send_long_text(message, ai_response)
 
 
 @bot.message_handler(content_types=["text"])
