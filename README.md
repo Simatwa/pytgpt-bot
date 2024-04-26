@@ -43,7 +43,7 @@ pip install pytgpt-bot
 
 Before getting started, ensure you've your Telegram bot token. If that's not the case then purpose to secure one from [@BotFather](https://telegram.me/BotFather).
 
-Proceed to fill the [env](env) configuration file as per the needs and then rename it `.env` before firing up the server `python3 run.py`.
+Proceed to fill the [env](env) configuration file as per the needs and then rename it `.env` before firing up the bot `python3 run.py`.
 
 Alternatively, using CLI interface::
 
@@ -78,7 +78,7 @@ This section provides detailed instructions on how to use the various commands a
 
 - **/history**: Provides users with the ability to view the history of their chats with the bot. This command is useful for reviewing past interactions or finding specific information from previous conversations.
 
-- **/settings**: Offers an overview of the bot's current configuration, including any custom settings applied by the user.
+- **/provider**: Offers an overview of the bot's current configuration, including any custom settings applied by the user.
 
 - **/reset**: Resets the chat history and starts a new conversation thread. This command is useful for users who wish to start fresh or clear their chat history for privacy reasons.
 

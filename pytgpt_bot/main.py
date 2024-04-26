@@ -1,11 +1,12 @@
 import telebot
+import json
+import logging
 import pytgpt.imager as image_generator
 from pytgpt.utils import Audio as audio_generator
 from pytgpt.utils import Conversation
 from pytgpt.utils import AwesomePrompts
 from functools import wraps
-import logging
-import json
+from sqlalchemy import text
 
 from .config import (
     bot_token,
@@ -16,9 +17,10 @@ from .config import (
     admin_id,
     provider,
 )
-from .db import User, Chat
+from .db import User
 from .utils import provider_keys
 from .utils import provider_map
+from .models import session, Chat, create_all, drop_all
 
 chosen_provider: str = provider_map.get(provider)
 
@@ -36,7 +38,7 @@ if logfile:
 
 logging.basicConfig(**log_params)
 
-bot = telebot.TeleBot(bot_token, parse_mode="Markdown")
+bot = telebot.TeleBot(bot_token, disable_web_page_preview=True)
 
 bot.remove_webhook()
 
@@ -67,7 +69,7 @@ def handler_formatter(text: bool = False, admin: bool = False):
                 logging.info(
                     f"Serving user [{message.from_user.id}] ({message.from_user.full_name}) - Function [{func.__name__}]"
                 )
-                if admin and not User(message.from_user.id).is_admin:
+                if admin and not User(message).is_admin:
                     return bot.reply_to(
                         message,
                         "Action restricted to admins only❗️",
@@ -87,7 +89,7 @@ def handler_formatter(text: bool = False, admin: bool = False):
                 return func(message)
             except Exception as e:
                 logging.error(f"Error on function - {func.__name__} - {e}")
-                logging.exception(e)
+                logging.debug(str(e))
                 bot.reply_to(
                     message,
                     text="😔 An error occured and I could't complete that request ❗️❗️❗️",
@@ -116,7 +118,10 @@ def make_delete_markup(
 
 
 def send_and_add_delete_button(
-    message: telebot.types.Message, text: str, as_reply: bool = False
+    message: telebot.types.Message,
+    text: str,
+    as_reply: bool = False,
+    parse_mode="Markdown",
 ):
     """Add send text and add delete inlineKeyboard item
 
@@ -124,42 +129,56 @@ def send_and_add_delete_button(
         message (telebot.types.Message):
         text (str): Tag
         as_reply (bool): Respond as a reply_to. Defaults to False.
+        parse_mode (str): __. Defaults to Markdown.
 
     Returns:
         _type_: _description_
     """
     markup = make_delete_markup(message)
     return (
-        bot.reply_to(message, text=text, reply_markup=markup)
+        bot.reply_to(message, text=text, reply_markup=markup, parse_mode=parse_mode)
         if as_reply
-        else bot.send_message(message.chat.id, text, reply_markup=markup)
+        else bot.send_message(
+            message.chat.id, text, reply_markup=markup, parse_mode=parse_mode
+        )
     )
 
 
-def send_long_text(message: telebot.types.Message, text: str, add_delete: bool = False):
+def send_long_text(
+    message: telebot.types.Message,
+    text: str,
+    add_delete: bool = False,
+    parse_mode="Markdown",
+):
     """Send texts longer than 4096 long
 
     Args:
         message (telebot.types.Message): Message object.
         text (str): Text to be sent.
         add_delete (bool). Add delete button. Defaults to False.
+        parse_mode (str): __. Defaults to Markdown.
     """
     max_length = 4096
     take_action = send_and_add_delete_button if add_delete else bot.send_message
     if len(text) <= max_length:
         # bot.send_message(message.chat.id, text)
-        take_action(message if add_delete else message.chat.id, text)
+        take_action(
+            message if add_delete else message.chat.id, text, parse_mode=parse_mode
+        )
     else:
         parts = [text[i : i + max_length] for i in range(0, len(text), max_length)]
         for part in parts:
-            take_action(message if add_delete else message.chat.id, part)
+            take_action(
+                message if add_delete else message.chat.id, part, parse_mode=parse_mode
+            )
 
 
 @bot.message_handler(commands=["help", "start"])
 @handler_formatter()
 def home(message: telebot.types.Message):
     """
-    Welcome to [pytgpt-bot](https://github.com/Simatwa/pytgpt-bot). Freely interact with multiple LLM providers.
+    Welcome to [pytgpt-bot](https://github.com/Simatwa/pytgpt-bot).
+    For chatting, text-to-image and text-to-voice conversions.
     /start : Show this help info.
     /chat : Chat with AI.
     /image : Generate image from text. (default)
@@ -170,7 +189,7 @@ def home(message: telebot.types.Message):
     /provider : Set new chat provider.
     /awesome : Set awesome prompt as intro.
     /history : Check chat history.
-    /settings : Check current settings.
+    /check : Check current settings.
     /reset : Start new chat thread.
     /myid : Echo your Telegram ID.
     /default : Chat with AI.
@@ -178,10 +197,9 @@ def home(message: telebot.types.Message):
 
     return bot.send_message(
         message.chat.id,
-        text=(
-            home.__doc__ + admin_commands if User(message.from_user.id).is_admin else ""
-        ),
+        text=(home.__doc__ + admin_commands if User(message).is_admin else ""),
         reply_markup=make_delete_markup(message),
+        parse_mode="Markdown",
     )
 
 
@@ -206,8 +224,8 @@ def set_chat_intro(message: telebot.types.Message):
             "The chat introduction must be at least 10 characters long.",
             reply_markup=make_delete_markup(message),
         )
-    user = User(message.from_user.id)
-    user.update_intro(intro)
+    user = User(message)
+    user.chat.intro = intro
     return bot.reply_to(
         message, "New intro set successfully.", reply_markup=make_delete_markup(message)
     )
@@ -236,8 +254,8 @@ def set_new_speech_voice_callback(call: telebot.types.CallbackQuery):
     voice, user_id = call.data.split(":")
     message = call.message
     markup = make_delete_markup(call.message)
-    user = User(int(user_id))
-    user.update_voice(voice)
+    user = User(user_id=int(user_id))
+    user.chat.voice = voice
     return bot.send_message(
         message.chat.id, f"New voice set : `{voice}`", reply_markup=markup
     )
@@ -264,8 +282,8 @@ def set_new_text_provider_callback(call: telebot.types.CallbackQuery):
     provider, user_id = call.data.split(":")
     message = call.message
     markup = make_delete_markup(call.message)
-    user = User(int(user_id))
-    user.update_provider(provider)
+    user = User(user_id=int(user_id))
+    user.chat.provider = provider
     return bot.send_message(
         message.chat.id, f"New text provider set : `{provider}`", reply_markup=markup
     )
@@ -294,8 +312,8 @@ def set_awesome_prompt_as_chat_intro_callback_handler(
     """Set awesome prompt as intro callback handler"""
     bot.delete_message(call.message.chat.id, call.message.id)
     awesome_prompt, user_id = call.data.split(":")
-    user = User(int(user_id))
-    user.update_intro(awesome_prompts.get(awesome_prompt))
+    user = User(user_id=int(user_id))
+    user.chat.intro(awesome_prompts.get(awesome_prompt))
     return bot.send_message(
         call.message.chat.id,
         f"""New awesome-intro set:
@@ -306,28 +324,34 @@ def set_awesome_prompt_as_chat_intro_callback_handler(
     )
 
 
-@bot.message_handler(commands=["settings"])
+@bot.message_handler(commands=["check"])
 @handler_formatter()
 def check_current_settings(message: telebot.types.Message):
     """Check current user settings"""
-    user_record: dict = User(message.from_user.id).record
+    chat = User(message).chat
     current_user_settings = (
-        f"Chat Length : `{len(user_record.get('history'))}`\n"
-        f"Speech Voice : `{user_record.get('voice')}`\n"
-        f"Chat Provider : `{user_record.get('provider')}`\n"
-        f"Chat Intro : `{user_record.get('intro')}`"
+        f"Chat Length : `{len(chat.history)}`\n"
+        f"Speech Voice : `{chat.voice}`\n"
+        f"Chat Provider : `{chat.provider}`\n"
+        f"Chat Intro : `{chat.intro}`"
     )
     return bot.reply_to(
-        message, current_user_settings, reply_markup=make_delete_markup(message)
+        message,
+        current_user_settings,
+        reply_markup=make_delete_markup(message),
+        parse_mode="Markdown",
     )
 
 
 @bot.message_handler(commands=["history"])
 @handler_formatter()
 def check_chat_history(message: telebot.types.Message):
-    user = User(message.from_user.id)
+    user = User(message)
     return send_long_text(
-        message, user.chat_history or "Your chat history is empty ❗️", add_delete=True
+        message,
+        user.chat.history or "Your chat history is empty ❗️",
+        add_delete=True,
+        parse_mode="Markdown",
     )
 
 
@@ -335,6 +359,7 @@ def check_chat_history(message: telebot.types.Message):
 @handler_formatter(text=True)
 def text_to_image_default(message: telebot.types.Message):
     """Generate image using `image`"""
+    bot.send_chat_action(message.chat.id, "upload_photo", timeout=timeout)
     generator_obj = image_generator.Imager(
         timeout=timeout,
     )
@@ -352,6 +377,7 @@ def text_to_image_default(message: telebot.types.Message):
 @handler_formatter(text=True)
 def text_to_image_prodia(message: telebot.types.Message):
     """Generate image using `prodia`"""
+    bot.send_chat_action(message.chat.id, "upload_photo", timeout=timeout)
     generator_obj = image_generator.Prodia(timeout=timeout)
     return bot.send_photo(
         message.chat.id,
@@ -365,7 +391,8 @@ def text_to_image_prodia(message: telebot.types.Message):
 @handler_formatter(text=True)
 def text_to_audio(message: telebot.types.Message):
     """Convert text to audio"""
-    voice = User(message.chat.id).chat_voice
+    bot.send_chat_action(message.chat.id, "upload_audio", timeout=timeout)
+    voice = User(message).chat.voice
     audio_chunk = audio_generator.text_to_audio(
         message=message.text,
         voice=voice,
@@ -385,7 +412,7 @@ def text_to_audio(message: telebot.types.Message):
 @handler_formatter()
 def reset_chat(message: telebot.types.Message):
     """Reset current chat thread"""
-    user = User(message.from_user.id)
+    user = User(message)
     user.delete()
     return bot.reply_to(
         message, "New chat instance created.", reply_markup=make_delete_markup(message)
@@ -396,7 +423,7 @@ def reset_chat(message: telebot.types.Message):
 @handler_formatter(admin=True)
 def clear_chats(message: telebot.types.Message):
     """Delete all chat entries"""
-    Chat.query("DELETE FROM Chat")
+    session.query(Chat).delete()
     logging.warning(
         f"Clearing Chats - [{message.from_user.full_name}] ({message.from_user.id}, {message.from_user.username})"
     )
@@ -409,13 +436,13 @@ def clear_chats(message: telebot.types.Message):
 @handler_formatter(admin=True)
 def total_chats_query(message: telebot.types.Message):
     """Query total chats"""
-    total_chats = Chat.query("SELECT COUNT(id) FROM Chat")[0][0]
+    total_chats = session.query(Chat).count()
     logging.warning(
         f"Total Chats query - [{message.from_user.full_name}] ({message.from_user.id}, {message.from_user.username})"
     )
     return bot.reply_to(
         message,
-        f"Total Chats **{total_chats}**",
+        f"Total Chats {total_chats}",
         reply_markup=make_delete_markup(message),
     )
 
@@ -432,8 +459,8 @@ def total_chats_table_and_logs(message: telebot.types.Message):
     logging.warning(
         f"Dropping Chat table and reinitialize - [{message.from_user.full_name}] ({message.from_user.id}, {message.from_user.username})"
     )
-    Chat.query("DROP TABLE CHAT")
-    Chat.initialize()
+    drop_all()
+    create_all()
     return bot.reply_to(
         message,
         f"Chat table and bot logs dropped and new one created.",
@@ -442,24 +469,36 @@ def total_chats_table_and_logs(message: telebot.types.Message):
 
 
 @bot.message_handler(commands=["sql"])
-@handler_formatter(admin=True)
+@handler_formatter(admin=True, text=True)
 def run_sql_statement(message: telebot.types.Message):
     """Run sql statements against database"""
     logging.warning(
         f"Running SQL statements - [{message.from_user.full_name}] ({message.from_user.id}, {message.from_user.username})"
     )
     try:
-        response = f"""
-        ```
-        {Chat.query(message.text)}
-        ```
-        """
+        results = session.execute(text(message.text))
+        response: dict[str, list] = {}
+        if results:
+            for count, row in enumerate(results):
+                response[count] = str(row)
+            jsonified_response = json.dumps(
+                response,
+                indent=3,
+            )
+            response = f"```json\n{jsonified_response}\n```"
+        else:
+            response = f"```\n{results}\n```"
+        session.commit()
 
     except Exception as e:
-        response = f"ERROR : {e.args[1] if e.args and len(e.args)>1 else e}"
+        response = f"{e.args[1] if e.args and len(e.args)>1 else e}"
 
     finally:
-        return send_long_text(message, response, add_delete=True)
+        return send_long_text(
+            message,
+            response,
+            add_delete=True,
+        )
 
 
 @bot.message_handler(commands=["logs"])
@@ -470,20 +509,19 @@ def check_current_settings(message: telebot.types.Message):
         return bot.reply_to(message, "Logfile not specified!")
     with open(logfile, encoding="utf-8") as fh:
         contents: str = fh.read()
-    return send_long_text(message, contents, add_delete=True)
+    return send_long_text(message, contents, add_delete=True, parse_mode=None)
 
 
 @bot.message_handler(content_types=["text"])
 @handler_formatter(text=True)
 def text_chat(message: telebot.types.Message):
     """Text generation"""
-    user = User(message.from_user.id)
-    chat_record = user.record
+    user = User(message)
     conversation = Conversation(max_tokens=max_tokens)
-    conversation.chat_history = chat_record.get("history")
-    user_provider = provider_map.get(chat_record.get("provider"))
+    conversation.chat_history = user.chat.history
+    user_provider = provider_map.get(user.chat.provider)
     conversation_prompt = conversation.gen_complete_prompt(
-        message.text, intro=chat_record.get("intro")
+        message.text, intro=user.chat.intro
     )
     bot.send_chat_action(message.chat.id, "typing")
     ai_response = user_provider(is_conversation=False, timeout=timeout).chat(
@@ -492,8 +530,8 @@ def text_chat(message: telebot.types.Message):
     conversation.update_chat_history(
         prompt=message.text, response=ai_response, force=True
     )
-    user.update_history(conversation.chat_history)
-    return send_long_text(message, ai_response)
+    user.chat.history = conversation.chat_history
+    send_long_text(message, ai_response)
 
 
 @bot.message_handler(func=lambda val: True)

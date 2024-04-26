@@ -8,6 +8,7 @@ load_dotenv()
 assert environ.get("token"), "Export bot's token to the environment 😠"
 
 bot_token: str = environ.get("token")
+database: str = environ.get("database")
 provider: str = environ.get("provider", "auto")
 admin_id: int = int(environ.get("admin-id", 1234567))
 max_tokens: int = int(environ.get("max-tokens", 600))

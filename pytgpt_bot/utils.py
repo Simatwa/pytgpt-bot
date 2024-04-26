@@ -24,6 +24,6 @@ provider_map: dict[str, object] = {
 provider_keys: list = list(provider_map.keys())
 
 bot_dir = api_static_dir / "bots"
-path_to_db = bot_dir / "telegram.db"
+path_to_default_db = bot_dir / "telegram.db"
 
 makedirs(bot_dir, exist_ok=True)

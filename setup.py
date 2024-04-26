@@ -38,6 +38,7 @@ setup(
         "python-tgpt==0.6.6",
         "python-dotenv==1.0.0",
         "click==8.1.3",
+        "SQLAlchemy==2.0.29",
     ],
     python_requires=">=3.10",
     keywords=[
