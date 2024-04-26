@@ -8,6 +8,8 @@ from pytgpt.utils import AwesomePrompts
 from functools import wraps
 from sqlalchemy import text
 
+from . import __version__, __repo__
+
 from .config import (
     bot_token,
     max_tokens,
@@ -20,6 +22,7 @@ from .config import (
 from .db import User
 from .utils import provider_keys
 from .utils import provider_map
+from .utils import get_random_emoji
 from .models import session, Chat, create_all, drop_all
 
 chosen_provider: str = provider_map.get(provider)
@@ -30,8 +33,8 @@ log_params = dict(
     level=loglevel,
 )
 
-awesome_prompts: dict = AwesomePrompts().get_acts()
-awesome_prompts_keys: list = list(awesome_prompts.keys())
+awesome_prompts_dict: dict = AwesomePrompts().get_acts()
+awesome_prompts_keys: list = list(awesome_prompts_dict.keys())
 
 if logfile:
     log_params["filename"] = logfile
@@ -42,23 +45,51 @@ bot = telebot.TeleBot(bot_token, disable_web_page_preview=True)
 
 bot.remove_webhook()
 
-logging.info(f"Bot started sucessfully. Admin ID - [{admin_id}]")
+logging.info(f"Bot started sucessfully {get_random_emoji('happy')}. Admin ID - [{admin_id}]")
 
-admin_commands = """
-    /clear : Clear all chats.
-    /total : Total chats available.
-    /drop : Clear entire chat table and bot logs.
-    /sql : Run sql statements against database.
-    /logs : View bot logs.
-"""
+usage_info = (
+    "Welcome to [PYTGPT-BOT](https://github.com/Simatwa/pytgpt-bot) ✨.\n"
+    "For chatting, text-to-image and text-to-voice conversions.\n\n"
+    "Usage commands:\n"
+    "1. /start : Show this help info 📚\n"
+    "2. /chat : Chat with AI 🤖\n"
+    "3. /image : Generate image from text 🖼️ (default)\n"
+    "4. /prodia : Generate image from text 🎨 (Prodia)\n"
+    "5. /audio : Generate audio from text 🎧\n"
+    "6. /intro : Set new text for chat intro 📝\n"
+    "7. /voice : Set new voice for speech synthesis 🎙️\n"
+    "8. /provider : Set new chat provider 🌐\n"
+    "9. /awesome : Set awesome prompt as intro 💥\n"
+    "10. /history : Check chat history 🕰️\n"
+    "11. /check : Check current settings ⚙️\n"
+    "12. /reset : Start new chat thread 🔄\n"
+    "13. /myid : Echo your Telegram ID 🆔\n"
+    "default : Chat with AI.\n\n"
+    f"For instances {get_random_emoji('love')}:\n"
+    "\t\t\t/chat Hello there.\n"
+    "\t\t\t/image Peaceful desert scene\n"
+    "\t\t\t/prodia Clear cool shore view\n"
+    "\t\t\t/audio I am better than you.\n\n"
+    f"[🌟 Star me on Github]({__repo__}) pytgpt-bot v{__version__}"
+)
+
+admin_commands = (
+    "\n\nAdmin Commands\n"
+    "/clear : Clear all chats 🧹\n"
+    "/total : Total chats available 📊\n"
+    "/drop : Clear entire chat table and bot logs 🗑️\n"
+    "/sql : Run sql statements against database 📊\n"
+    "/logs : View bot logs 📜"
+)
 
 
-def handler_formatter(text: bool = False, admin: bool = False):
+def handler_formatter(text: bool = False, admin: bool = False, preserve: bool = False):
     """Handles common message handler verification and execptions
 
     Args:
         text (bool, optional): Command must contain text?. Defaults to False.
         admin (bool, optional): Needs admin privileges?. Defaults to False.
+        preserve (bool, optional): Do not alter text?. Default to False.
     """
 
     def main(func):
@@ -72,17 +103,17 @@ def handler_formatter(text: bool = False, admin: bool = False):
                 if admin and not User(message).is_admin:
                     return bot.reply_to(
                         message,
-                        "Action restricted to admins only❗️",
+                        f"{get_random_emoji("angry")} Action restricted to admins only❗️",
                         reply_markup=make_delete_markup(message),
                     )
 
-                if message.text and message.text.startswith("/"):
+                if message.text and message.text.startswith("/") and not preserve:
                     message.text = " ".join(message.text.split(" ")[1:])
 
                 if text and not message.text:
                     return bot.reply_to(
                         message,
-                        "Text is required❗️❗️.",
+                        f"{get_random_emoji()} Text is required❗️❗️.",
                         reply_markup=make_delete_markup(message),
                     )
 
@@ -92,7 +123,7 @@ def handler_formatter(text: bool = False, admin: bool = False):
                 logging.debug(str(e))
                 bot.reply_to(
                     message,
-                    text="😔 An error occured and I could't complete that request ❗️❗️❗️",
+                    text=f"{get_random_emoji('angry')} An error occured and I could't complete that request ❗️❗️❗️",
                     reply_markup=make_delete_markup(message),
                 )
 
@@ -176,28 +207,11 @@ def send_long_text(
 @bot.message_handler(commands=["help", "start"])
 @handler_formatter()
 def home(message: telebot.types.Message):
-    """
-    Welcome to [pytgpt-bot](https://github.com/Simatwa/pytgpt-bot).
-    For chatting, text-to-image and text-to-voice conversions.
-    /start : Show this help info.
-    /chat : Chat with AI.
-    /image : Generate image from text. (default)
-    /prodia : Generate image from text. (Prodia)
-    /audio : Generate audio from text.
-    /intro : Set new text for chat intro.
-    /voice : Set new voice for speech synthesis.
-    /provider : Set new chat provider.
-    /awesome : Set awesome prompt as intro.
-    /history : Check chat history.
-    /check : Check current settings.
-    /reset : Start new chat thread.
-    /myid : Echo your Telegram ID.
-    /default : Chat with AI.
-    """
+    """Show help"""
 
     return bot.send_message(
         message.chat.id,
-        text=(home.__doc__ + admin_commands if User(message).is_admin else ""),
+        text=(usage_info + admin_commands if User(message).is_admin else usage_info),
         reply_markup=make_delete_markup(message),
         parse_mode="Markdown",
     )
@@ -208,7 +222,7 @@ def home(message: telebot.types.Message):
 def echo_user_id(message: telebot.types.Message):
     return bot.reply_to(
         message,
-        f"Greetings {message.from_user.first_name}. Your Telegram ID is {message.from_user.id}.",
+        f"Greetings {message.from_user.first_name} {get_random_emoji('love')}. Your Telegram ID is {message.from_user.id}.",
         reply_markup=make_delete_markup(message),
     )
 
@@ -217,11 +231,11 @@ def echo_user_id(message: telebot.types.Message):
 @handler_formatter(text=True)
 def set_chat_intro(message: telebot.types.Message):
     """Set new value for chat intro"""
-    intro = AwesomePrompts().get_act(message.text) or message.text
+    intro = awesome_prompts_dict.get(message.text,message.text)
     if not len(intro) > 10:
         return bot.reply_to(
             message,
-            "The chat introduction must be at least 10 characters long.",
+            f"{get_random_emoji('sad')} The chat introduction must be at least 10 characters long.",
             reply_markup=make_delete_markup(message),
         )
     user = User(message)
@@ -242,7 +256,7 @@ def set_new_speech_voice(message: telebot.types.Message):
     )
     markup.add(*map(make_item, audio_generator.all_voices))
     bot.delete_message(message.chat.id, message.id)
-    return bot.send_message(message.chat.id, "Choose a voice:", reply_markup=markup)
+    return bot.send_message(message.chat.id, f"Choose a voice {get_random_emoji('happy')}:", reply_markup=markup)
 
 
 @bot.callback_query_handler(
@@ -257,7 +271,7 @@ def set_new_speech_voice_callback(call: telebot.types.CallbackQuery):
     user = User(user_id=int(user_id))
     user.chat.voice = voice
     return bot.send_message(
-        message.chat.id, f"New voice set : `{voice}`", reply_markup=markup
+        message.chat.id, f"{get_random_emoji('happy')} New voice set : `{voice}`", reply_markup=markup, parse_mode="Markdown"
     )
 
 
@@ -272,7 +286,7 @@ def set_new_text_provider(message: telebot.types.Message):
     )
     markup.add(*map(make_item, provider_keys))
     bot.delete_message(message.chat.id, message.id)
-    return bot.send_message(message.chat.id, "Choose a provider:", reply_markup=markup)
+    return bot.send_message(message.chat.id, f"Choose a provider {get_random_emoji('love')}:", reply_markup=markup)
 
 
 @bot.callback_query_handler(func=lambda call: call.data.split(":")[0] in provider_keys)
@@ -285,7 +299,7 @@ def set_new_text_provider_callback(call: telebot.types.CallbackQuery):
     user = User(user_id=int(user_id))
     user.chat.provider = provider
     return bot.send_message(
-        message.chat.id, f"New text provider set : `{provider}`", reply_markup=markup
+        message.chat.id, f"New text provider set {get_random_emoji('love')}: `{provider}`", reply_markup=markup, parse_mode="Markdown"
     )
 
 
@@ -300,7 +314,7 @@ def set_awesome_prompt_as_chat_intro(message: telebot.types.Message):
     )
     markup.add(*map(make_item, awesome_prompts_keys))
     bot.delete_message(message.chat.id, message.id)
-    return bot.send_message(message.chat.id, "Choose awesome:", reply_markup=markup)
+    return bot.send_message(message.chat.id, f"Choose awesome {get_random_emoji('love')}:", reply_markup=markup)
 
 
 @bot.callback_query_handler(
@@ -313,14 +327,12 @@ def set_awesome_prompt_as_chat_intro_callback_handler(
     bot.delete_message(call.message.chat.id, call.message.id)
     awesome_prompt, user_id = call.data.split(":")
     user = User(user_id=int(user_id))
-    user.chat.intro(awesome_prompts.get(awesome_prompt))
+    user.chat.intro = awesome_prompts_dict.get(awesome_prompt)
     return bot.send_message(
         call.message.chat.id,
-        f"""New awesome-intro set:
-```
-{awesome_prompts.get(awesome_prompt)}
-```.""",
+        f"""New awesome-intro set:\n```{user.chat.intro}\n```.""",
         reply_markup=make_delete_markup(call.message),
+        parse_mode="Markdown"
     )
 
 
@@ -349,7 +361,7 @@ def check_chat_history(message: telebot.types.Message):
     user = User(message)
     return send_long_text(
         message,
-        user.chat.history or "Your chat history is empty ❗️",
+        user.chat.history or f"{get_random_emoji()} Your chat history is empty ❗️",
         add_delete=True,
         parse_mode="Markdown",
     )
@@ -415,7 +427,7 @@ def reset_chat(message: telebot.types.Message):
     user = User(message)
     user.delete()
     return bot.reply_to(
-        message, "New chat instance created.", reply_markup=make_delete_markup(message)
+        message, f"New chat instance created. {get_random_emoji('happy')}", reply_markup=make_delete_markup(message)
     )
 
 
@@ -428,7 +440,7 @@ def clear_chats(message: telebot.types.Message):
         f"Clearing Chats - [{message.from_user.full_name}] ({message.from_user.id}, {message.from_user.username})"
     )
     return bot.reply_to(
-        message, "Chats cleared successfully.", reply_markup=make_delete_markup(message)
+        message, f"{get_random_emoji('love')} Chats cleared successfully.", reply_markup=make_delete_markup(message)
     )
 
 
@@ -463,7 +475,7 @@ def total_chats_table_and_logs(message: telebot.types.Message):
     create_all()
     return bot.reply_to(
         message,
-        f"Chat table and bot logs dropped and new one created.",
+        f"{get_random_emoji('love')} Chat table and bot logs dropped and new one created.",
         reply_markup=make_delete_markup(message),
     )
 
@@ -506,13 +518,23 @@ def run_sql_statement(message: telebot.types.Message):
 def check_current_settings(message: telebot.types.Message):
     """View bot logs"""
     if not logfile:
-        return bot.reply_to(message, "Logfile not specified!")
+        return bot.reply_to(message, f"{get_random_emoji()} Logfile not specified ❗️",reply_markup=make_delete_markup(message))
     with open(logfile, encoding="utf-8") as fh:
         contents: str = fh.read()
     return send_long_text(message, contents, add_delete=True, parse_mode=None)
 
 
-@bot.message_handler(content_types=["text"])
+def is_action_for_chat(message: telebot.types.Message) -> bool:
+    splitted_text = message.text.split(" ")
+    if splitted_text[0].startswith("/"):
+        if splitted_text[0] == "/chat":
+            return True
+        else:
+            return False
+    return True
+
+
+@bot.message_handler(content_types=["text"], func=is_action_for_chat)
 @handler_formatter(text=True)
 def text_chat(message: telebot.types.Message):
     """Text generation"""
@@ -536,7 +558,12 @@ def text_chat(message: telebot.types.Message):
 
 @bot.message_handler(func=lambda val: True)
 def any_other_action(message):
-    return bot.reply_to(message, home.__doc__, reply_markup=make_delete_markup(message))
+    return bot.reply_to(
+        message,
+        usage_info,
+        reply_markup=make_delete_markup(message),
+        parse_mode="Markdown",
+    )
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith("delete:"))

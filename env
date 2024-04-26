@@ -1,9 +1,69 @@
+# Telegaram bot api key generated from [@BotFather](https://telegram.me/BotFather.
 token=<Your-telegram-token>
+
+# Chat provider name such as phind, blackboxai, llama2 etc
 provider=auto
+
+## Telegram's Admin Id. 
+# Privileges include checking logs, run sql commands
+# clear table etcs
+# To obtain it text live bot with command `/myid`
 admin-id=12345678
+
+# Tokens to be sampled upon completion and maximum chat-text length
 max-tokens=600
+
+# Http request timeout and bot response timout in seconds
 timeout=30
+
+# Logging level
+# Either of 10 - Debug, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - DEBUGGING, 51 - OFF
 loglevel=20
+
+# Relative or Absolute path e.g ///tmp/pytgpt-bot.log
 logfile=pytgpt-bot.log
+
+# Voice for speech synthesis such as Filiz, Astrid, Tatyna, Maxim etc.
 voice=Brian
+
+# Database engine https://docs.sqlalchemy.org/en/20/tutorial/engine.html
+# e.g sqlite:///${HOME}/.cache/pytgpt/api/bots/telegram.db
+#  If  you're stuck just leave it null.
 database=
+
+#Welcome to PYTGPT-BOT.
+#For chatting, text-to-image and text-to-voice conversions.
+
+#Usage commands:
+#1. /start : Show this help info 📚
+#2. /chat : Chat with AI 🤖
+#3. /image : Generate image from text 🖼️ (default)
+#4. /prodia : Generate image from text 🎨 (Prodia)
+#5. /audio : Generate audio from text 🎧
+#6. /intro : Set new text for chat intro 📝
+#7. /voice : Set new voice for speech synthesis 🎙️
+#8. /provider : Set new chat provider 🌐
+#9. /awesome : Set awesome prompt as intro 💥
+#10. /history : Check chat history 🕰️
+#11. /check : Check current settings ⚙️
+#12. /reset : Start new chat thread 🔄
+#13. /myid : Echo your Telegram ID 🆔
+#default : Chat with AI.
+
+#For instances :
+#   /chat Hello there.
+#   /image Sunset view from ISS
+#   /prodia Clear cool shore view
+#   /audio I am better than you.
+
+
+#Admin Commands
+#/clear : Clear all chats 🧹
+#/total : Total chats available 📊
+#/drop : Clear entire chat table and bot logs 🗑️
+#/sql : Run sql statements against database 📊
+#/logs : View bot logs 📜
+
+## CLI USAGE 
+# examples
+# pytgpt-bot run $(get telegram) -a $(get telegram-id) -d "sqlite:////tmp/pytgpt-bot.log"

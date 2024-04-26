@@ -13,12 +13,12 @@ def read_contents(path: str) -> str:
 setup(
     name="pytgpt-bot",
     packages=["pytgpt_bot"],
-    version="0.0.9",
+    version="0.1.0",
     license="MIT",
     author="Smartwa",
     maintainer="Smartwa",
     author_email="simatwacaleb@proton.me",
-    description="Telegram bot for text generation, text-to-image and text-to-audio conversions.",
+    description="Telegram bot for chatting, text-to-image and text-to-voice conversions",
     url="https://github.com/Simatwa/pytgpt-bot",
     project_urls={
         "Bug Report": "https://github.com/Simatwa/pytgpt-bot/issues/new",

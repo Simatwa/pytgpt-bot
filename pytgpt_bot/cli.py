@@ -70,6 +70,11 @@ def bot():
     help="Default tgpt-based llm provider",
     default="auto",
 )
+@click.option(
+    "-d",
+    "--database",
+    help="Database engine URL e.g sqlite:////:memory:",
+)
 @click.help_option("-h", "--help")
 def run(**kwargs):
     """Start the bot"""
