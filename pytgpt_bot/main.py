@@ -45,7 +45,9 @@ bot = telebot.TeleBot(bot_token, disable_web_page_preview=True)
 
 bot.remove_webhook()
 
-logging.info(f"Bot started sucessfully {get_random_emoji('happy')}. Admin ID - [{admin_id}]")
+logging.info(
+    f"Bot started sucessfully {get_random_emoji('happy')}. Admin ID - [{admin_id}]"
+)
 
 usage_info = (
     "Welcome to [PYTGPT-BOT](https://github.com/Simatwa/pytgpt-bot) ✨.\n"
@@ -103,7 +105,7 @@ def handler_formatter(text: bool = False, admin: bool = False, preserve: bool = 
                 if admin and not User(message).is_admin:
                     return bot.reply_to(
                         message,
-                        f"{get_random_emoji("angry")} Action restricted to admins only❗️",
+                        f"{get_random_emoji('angry')} Action restricted to admins only❗️",
                         reply_markup=make_delete_markup(message),
                     )
 
@@ -231,7 +233,7 @@ def echo_user_id(message: telebot.types.Message):
 @handler_formatter(text=True)
 def set_chat_intro(message: telebot.types.Message):
     """Set new value for chat intro"""
-    intro = awesome_prompts_dict.get(message.text,message.text)
+    intro = awesome_prompts_dict.get(message.text, message.text)
     if not len(intro) > 10:
         return bot.reply_to(
             message,
@@ -256,7 +258,11 @@ def set_new_speech_voice(message: telebot.types.Message):
     )
     markup.add(*map(make_item, audio_generator.all_voices))
     bot.delete_message(message.chat.id, message.id)
-    return bot.send_message(message.chat.id, f"Choose a voice {get_random_emoji('happy')}:", reply_markup=markup)
+    return bot.send_message(
+        message.chat.id,
+        f"Choose a voice {get_random_emoji('happy')}:",
+        reply_markup=markup,
+    )
 
 
 @bot.callback_query_handler(
@@ -271,7 +277,10 @@ def set_new_speech_voice_callback(call: telebot.types.CallbackQuery):
     user = User(user_id=int(user_id))
     user.chat.voice = voice
     return bot.send_message(
-        message.chat.id, f"{get_random_emoji('happy')} New voice set : `{voice}`", reply_markup=markup, parse_mode="Markdown"
+        message.chat.id,
+        f"{get_random_emoji('happy')} New voice set : `{voice}`",
+        reply_markup=markup,
+        parse_mode="Markdown",
     )
 
 
@@ -286,7 +295,11 @@ def set_new_text_provider(message: telebot.types.Message):
     )
     markup.add(*map(make_item, provider_keys))
     bot.delete_message(message.chat.id, message.id)
-    return bot.send_message(message.chat.id, f"Choose a provider {get_random_emoji('love')}:", reply_markup=markup)
+    return bot.send_message(
+        message.chat.id,
+        f"Choose a provider {get_random_emoji('love')}:",
+        reply_markup=markup,
+    )
 
 
 @bot.callback_query_handler(func=lambda call: call.data.split(":")[0] in provider_keys)
@@ -299,7 +312,10 @@ def set_new_text_provider_callback(call: telebot.types.CallbackQuery):
     user = User(user_id=int(user_id))
     user.chat.provider = provider
     return bot.send_message(
-        message.chat.id, f"New text provider set {get_random_emoji('love')}: `{provider}`", reply_markup=markup, parse_mode="Markdown"
+        message.chat.id,
+        f"New text provider set {get_random_emoji('love')}: `{provider}`",
+        reply_markup=markup,
+        parse_mode="Markdown",
     )
 
 
@@ -314,7 +330,11 @@ def set_awesome_prompt_as_chat_intro(message: telebot.types.Message):
     )
     markup.add(*map(make_item, awesome_prompts_keys))
     bot.delete_message(message.chat.id, message.id)
-    return bot.send_message(message.chat.id, f"Choose awesome {get_random_emoji('love')}:", reply_markup=markup)
+    return bot.send_message(
+        message.chat.id,
+        f"Choose awesome {get_random_emoji('love')}:",
+        reply_markup=markup,
+    )
 
 
 @bot.callback_query_handler(
@@ -332,7 +352,7 @@ def set_awesome_prompt_as_chat_intro_callback_handler(
         call.message.chat.id,
         f"""New awesome-intro set:\n```{user.chat.intro}\n```.""",
         reply_markup=make_delete_markup(call.message),
-        parse_mode="Markdown"
+        parse_mode="Markdown",
     )
 
 
@@ -427,7 +447,9 @@ def reset_chat(message: telebot.types.Message):
     user = User(message)
     user.delete()
     return bot.reply_to(
-        message, f"New chat instance created. {get_random_emoji('happy')}", reply_markup=make_delete_markup(message)
+        message,
+        f"New chat instance created. {get_random_emoji('happy')}",
+        reply_markup=make_delete_markup(message),
     )
 
 
@@ -440,7 +462,9 @@ def clear_chats(message: telebot.types.Message):
         f"Clearing Chats - [{message.from_user.full_name}] ({message.from_user.id}, {message.from_user.username})"
     )
     return bot.reply_to(
-        message, f"{get_random_emoji('love')} Chats cleared successfully.", reply_markup=make_delete_markup(message)
+        message,
+        f"{get_random_emoji('love')} Chats cleared successfully.",
+        reply_markup=make_delete_markup(message),
     )
 
 
@@ -518,7 +542,11 @@ def run_sql_statement(message: telebot.types.Message):
 def check_current_settings(message: telebot.types.Message):
     """View bot logs"""
     if not logfile:
-        return bot.reply_to(message, f"{get_random_emoji()} Logfile not specified ❗️",reply_markup=make_delete_markup(message))
+        return bot.reply_to(
+            message,
+            f"{get_random_emoji()} Logfile not specified ❗️",
+            reply_markup=make_delete_markup(message),
+        )
     with open(logfile, encoding="utf-8") as fh:
         contents: str = fh.read()
     return send_long_text(message, contents, add_delete=True, parse_mode=None)
