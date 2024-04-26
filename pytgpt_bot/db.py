@@ -33,8 +33,9 @@ class Chat:
         CREATE TABLE IF NOT EXISTS Chat(
             Id INTEGER PRIMARY KEY,
             Intro TEXT DEFAULT "{Conversation.intro}",
-            History TEXT DEFAULT "",
-            Voice TEXT DEFAULT "Brian"
+            History TEXT DEFAULT "" NOT NULL,
+            Voice TEXT DEFAULT "Brian" NOT NULL,
+            Provider TEXT DEFAULT "auto" NOT NULL
             );
         """
         )
@@ -153,8 +154,8 @@ class User(Chat):
         Returns:
             typing.Dict[str, typing.Union[int, str]]: Records
         """
-        id, intro, history, voice = Chat.read(id=self.id, fetchone=True)
-        return dict(id=id, intro=intro, history=history, voice=voice)
+        id, intro, history, voice, provider = Chat.read(id=self.id, fetchone=True)
+        return dict(id=id, intro=intro, history=history, voice=voice, provider=provider)
 
     @property
     def chat_history(self) -> typing.Union[str, None]:
@@ -167,9 +168,14 @@ class User(Chat):
         return self.record.get("intro")
 
     @property
-    def chat_voice(self) -> typing.Union[str, None]:
+    def chat_voice(self) -> str:
         """User's speech voice"""
         return self.record.get("voice")
+
+    @property
+    def chat_provider(self) -> str:
+        """User's text chat provider"""
+        return self.record.get("provider")
 
     def update_history(self, data: str):
         """Update chat history
@@ -204,6 +210,18 @@ class User(Chat):
         Chat.update(
             self.id,
             field="voice",
+            data=data,
+        )
+
+    def update_provider(self, data: str):
+        """Update text provider
+
+        Args:
+            data (str): New provider.
+        """
+        Chat.update(
+            self.id,
+            field="provider",
             data=data,
         )
 

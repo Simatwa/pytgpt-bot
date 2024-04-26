@@ -1,5 +1,4 @@
 import telebot
-import pytgpt.auto as text_generator
 import pytgpt.imager as image_generator
 from pytgpt.utils import Audio as audio_generator
 from pytgpt.utils import Conversation
@@ -7,9 +6,44 @@ from pytgpt.utils import AwesomePrompts
 from functools import wraps
 import logging
 
-from .config import bot_token, max_tokens, timeout, loglevel, logfile, admin_id
+from pytgpt.opengpt import OPENGPT
+from pytgpt.koboldai import KOBOLDAI
+from pytgpt.phind import PHIND
+from pytgpt.llama2 import LLAMA2
+from pytgpt.blackboxai import BLACKBOXAI
+from pytgpt.perplexity import PERPLEXITY
+from pytgpt.yepchat import YEPCHAT
+from pytgpt.auto import AUTO
+
+from .config import (
+    bot_token,
+    max_tokens,
+    timeout,
+    loglevel,
+    logfile,
+    admin_id,
+    provider,
+)
 from .db import User, Chat
 from . import __version__
+
+provider_map: dict[str, object] = {
+    "opengpt": OPENGPT,
+    "koboldai": KOBOLDAI,
+    "phind": PHIND,
+    "llama2": LLAMA2,
+    "blackboxai": BLACKBOXAI,
+    "perplexity": PERPLEXITY,
+    "yepchat": YEPCHAT,
+    "auto": AUTO,
+}
+
+chosen_provider: str = provider_map.get(provider)
+provider_keys: list = list(provider_map.keys())
+
+assert (
+    chosen_provider
+), f"Provider '{provider}' is not one of {', '.join(provider_keys)}"
 
 log_params = dict(
     format="%(asctime)s : %(levelname)s - %(message)s",
@@ -79,7 +113,7 @@ def handler_formatter(text: bool = False, admin: bool = False):
                 logging.exception(e)
                 bot.reply_to(
                     message,
-                    text="😔 An error occured and could't complete that request ❗️❗️❗️",
+                    text="😔 An error occured and I could't complete that request ❗️❗️❗️",
                     reply_markup=make_delete_markup(message),
                 )
 
@@ -147,15 +181,16 @@ def send_long_text(message: telebot.types.Message, text: str, add_delete: bool =
 @bot.message_handler(commands=["help", "start"])
 @handler_formatter()
 def home(message: telebot.types.Message):
-    f"""
-    Welcome to [pytgpt-bot](https://github.com/Simatwa/pytgpt-bot) v{__version__}.
+    """
+    Welcome to [pytgpt-bot](https://github.com/Simatwa/pytgpt-bot).
     /start : Show this help info.
     /chat : Chat with AI.
-    /imager : Generate image from text. (default)
+    /image : Generate image from text. (default)
     /prodia : Generate image from text. (Prodia)
     /audio : Generate audio from text.
-    /sintro : Set new text for chat intro.
-    /svoice : Set new voice for speech synthesis.
+    /intro : Set new text for chat intro.
+    /voice : Set new voice for speech synthesis.
+    /provider : Set new chat provider.
     /awesome : Set awesome prompt as intro.
     /history : Check chat history.
     /settings : Check current settings.
@@ -183,14 +218,16 @@ def echo_user_id(message: telebot.types.Message):
     )
 
 
-@bot.message_handler(commands=["sintro"])
+@bot.message_handler(commands=["intro"])
 @handler_formatter(text=True)
 def set_chat_intro(message: telebot.types.Message):
     """Set new value for chat intro"""
     intro = AwesomePrompts().get_act(message.text) or message.text
     if not len(intro) > 10:
         return bot.reply_to(
-            message, "The chat introduction must be at least 10 characters long."
+            message,
+            "The chat introduction must be at least 10 characters long.",
+            reply_markup=make_delete_markup(message),
         )
     user = User(message.from_user.id)
     user.update_intro(intro)
@@ -199,9 +236,9 @@ def set_chat_intro(message: telebot.types.Message):
     )
 
 
-@bot.message_handler(commands=["svoice"])
+@bot.message_handler(commands=["voice"])
 @handler_formatter(text=False)
-def set_new_chat_intro(message: telebot.types.Message):
+def set_new_speech_voice(message: telebot.types.Message):
     """Set new voice for speech synthesis"""
     user_id: str = message.from_user.id
     markup = telebot.types.InlineKeyboardMarkup(row_width=4)
@@ -216,22 +253,44 @@ def set_new_chat_intro(message: telebot.types.Message):
 @bot.callback_query_handler(
     func=lambda call: call.data.split(":")[0] in audio_generator.all_voices
 )
-def set_new_chat_intro_callback(call: telebot.types.CallbackQuery):
+def set_new_speech_voice_callback(call: telebot.types.CallbackQuery):
     """Set new voice for speech synthesis callback handler"""
     bot.delete_message(call.message.chat.id, call.message.id)
     voice, user_id = call.data.split(":")
     message = call.message
     markup = make_delete_markup(call.message)
-    if not voice in audio_generator.all_voices:
-        return bot.reply_to(
-            message,
-            f"Voice '{voice}' is not one of : `({', '.join(audio_generator.all_voices)})`",
-            reply_markup=markup,
-        )
     user = User(int(user_id))
     user.update_voice(voice)
     return bot.send_message(
         message.chat.id, f"New voice set : `{voice}`", reply_markup=markup
+    )
+
+
+@bot.message_handler(commands=["provider"])
+@handler_formatter(text=False)
+def set_new_text_provider(message: telebot.types.Message):
+    """Set new text provider"""
+    user_id: str = message.from_user.id
+    markup = telebot.types.InlineKeyboardMarkup(row_width=2)
+    make_item = lambda provider: telebot.types.InlineKeyboardButton(
+        provider, callback_data=f"{provider}:{user_id}"
+    )
+    markup.add(*map(make_item, provider_keys))
+    bot.delete_message(message.chat.id, message.id)
+    return bot.send_message(message.chat.id, "Choose a provider:", reply_markup=markup)
+
+
+@bot.callback_query_handler(func=lambda call: call.data.split(":")[0] in provider_keys)
+def set_new_text_provider_callback(call: telebot.types.CallbackQuery):
+    """Set new text provider callback handler"""
+    bot.delete_message(call.message.chat.id, call.message.id)
+    provider, user_id = call.data.split(":")
+    message = call.message
+    markup = make_delete_markup(call.message)
+    user = User(int(user_id))
+    user.update_provider(provider)
+    return bot.send_message(
+        message.chat.id, f"New text provider set : `{provider}`", reply_markup=markup
     )
 
 
@@ -274,11 +333,12 @@ def set_awesome_prompt_as_chat_intro_callback_handler(
 @handler_formatter()
 def check_current_settings(message: telebot.types.Message):
     """Check current user settings"""
-    user = User(message.from_user.id)
+    user_record: dict = User(message.from_user.id).record
     current_user_settings = f"""
-    **Chat Length** : `{len(user.chat_history)}`
-    **Speech Voice** : `{user.chat_voice}`
-    **Chat Intro** : `{user.chat_intro}`
+    **Chat Length** : `{len(user_record.get('history'))}`
+    **Speech Voice** : `{user_record.get('voice')}`
+    **Chat provider** : {user_record.get('provider')}
+    **Chat Intro** : `{user_record.get('intro')}`
     """
     return bot.reply_to(
         message, current_user_settings, reply_markup=make_delete_markup(message)
@@ -428,10 +488,10 @@ def check_current_settings(message: telebot.types.Message):
     return send_long_text(message, contents, add_delete=True)
 
 
-@bot.message_handler(content_types=["text"])
+@bot.message_handler(content_types=["chat"])
 @handler_formatter(text=True)
 def text_chat(message: telebot.types.Message):
-    """Text generation"""
+    """Text generation - provider of choice"""
     user = User(message.from_user.id)
     chat_record = user.record
     conversation = Conversation(max_tokens=max_tokens)
@@ -441,6 +501,29 @@ def text_chat(message: telebot.types.Message):
     )
     bot.send_chat_action(message.chat.id, "typing")
     ai_response = text_generator.AUTO(is_conversation=False, timeout=timeout).chat(
+        conversation_prompt
+    )
+    conversation.update_chat_history(
+        prompt=message.text, response=ai_response, force=True
+    )
+    user.update_history(conversation.chat_history)
+    return send_long_text(message, ai_response)
+
+
+@bot.message_handler(content_types=["text"])
+@handler_formatter(text=True)
+def text_chat(message: telebot.types.Message):
+    """Text generation"""
+    user = User(message.from_user.id)
+    chat_record = user.record
+    conversation = Conversation(max_tokens=max_tokens)
+    conversation.chat_history = chat_record.get("history")
+    user_provider = provider_map.get(chat_record.get("provider"))
+    conversation_prompt = conversation.gen_complete_prompt(
+        message.text, intro=chat_record.get("intro")
+    )
+    bot.send_chat_action(message.chat.id, "typing")
+    ai_response = user_provider(is_conversation=False, timeout=timeout).chat(
         conversation_prompt
     )
     conversation.update_chat_history(

@@ -53,31 +53,39 @@ Alternatively, using CLI interface::
 
 ### Commands
 
-- `/start`: This command displays the help information, providing users with a list of available commands and a brief description of what each command does. It's a useful way for users to quickly understand how to interact with the bot.
 
-- `/chat`: Allows users to engage in natural language conversations with the AI. This command initiates a chat session where users can ask questions, make requests, or simply chat with the AI.
+### Usage Information
 
-- `/image`: This command is used to generate images from text descriptions. Users can input a text description, and the bot will attempt to create an image based on that description. This feature can be particularly useful for visualizing ideas or concepts.
+This section provides detailed instructions on how to use the various commands available in the bot.
 
-- `/prodia`: Similar to `/image`, this command also generates images from text descriptions. However, it uses a different provider (Prodia) to create the images. This could offer a different style or interpretation of the text descriptions compared to the default method.
+- **/start**: Displays the help information, offering a comprehensive list of available commands and their functionalities. This command is essential for users to quickly understand how to interact with the bot.
 
-- `/audio`: Converts text to speech. Users can input text, and the bot will generate an audio file that reads out the text. This can be useful for listening to descriptions, instructions, or any text content.
+- **/chat**: Initiate a natural language conversation with the AI. This command allows users to engage in interactive dialogues, ask questions, or make requests.
 
-- `/sintro`: Allows users to set a new text for the chat intro. This can be used to customize the greeting message that users see when they start a new chat session with the bot.
+- **/image**: Generates images from textual descriptions using the default provider. This feature enables users to visualize ideas or concepts through images.
 
-- `/svoice`: Lets users set a new voice for speech synthesis. This command enables users to choose from different voices for the AI to use when generating audio from text.
+- **/prodia**: Generates images from textual descriptions using the Prodia provider. This command offers a unique style or interpretation of the text descriptions compared to the default method.
 
-- `/awesome`: Sets an awesome prompt as the introductory message for the chat. This could be a motivational quote, a fun fact, or any other type of prompt that might inspire or engage users in their interactions with the bot.
+- **/audio**: Converts text to speech, providing users with the ability to listen to descriptions, instructions, or any text content read out by the AI.
 
-- `/history`: Checks the chat history. This command allows users to view the history of their chats with the bot. It can be useful for users who want to review past interactions or find specific information from previous conversations.
+- **/intro**: Sets a new text for the chat intro. This command allows users to customize the chat introductory prompt which serves as a guide in the human-AI engagement.
 
-- `/settings`: Checks the current settings of the bot. This command provides users with an overview of the bot's current configuration, including any custom settings they have applied.
+- **/voice**: Sets a new voice for speech synthesis. This command enables users to choose from different voices for the AI to use when generating audio from text.
 
-- `/reset`: Starts a new chat thread. This command resets the chat history and starts a new conversation thread. It's useful for users who want to start fresh or who want to clear their chat history for privacy reasons.
+- **/provider**: Sets a new chat provider. This command allows users to switch between different providers for various functionalities, such as `phind`, `llama2`, `koboldai` etc.
 
-- `/myid`: Echoes the user's Telegram ID. This command is useful for users who need to know their Telegram ID for any reason, such as setting up bot admin.
+- **/awesome**: Sets predefined prompt as `chat intro`. Browse over 200 of them.
 
-- `/default`: Chat with AI. This command is essentially an alias for `/chat`, allowing users to initiate a chat session with the AI using a different command.
+- **/history**: Provides users with the ability to view the history of their chats with the bot. This command is useful for reviewing past interactions or finding specific information from previous conversations.
+
+- **/settings**: Offers an overview of the bot's current configuration, including any custom settings applied by the user.
+
+- **/reset**: Resets the chat history and starts a new conversation thread. This command is useful for users who wish to start fresh or clear their chat history for privacy reasons.
+
+- **/myid**: Echoes the user's Telegram ID. This command is useful for users who need to know their Telegram ID for various purposes, such as setting up bot admin.
+
+- **<any other text or command>**: An alias for `/chat`, allowing users to continue with text chat.
+
 
 ### Administrative Commands
 
