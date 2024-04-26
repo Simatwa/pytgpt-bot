@@ -1,13 +1,12 @@
 import sqlite3
+from .utils import path_to_db
 from .config import admin_id
-from .config import path_to_db
 from .config import provider
 from .config import voice
 from functools import wraps
 import logging
 import typing
 from pytgpt.utils import Conversation
-from pytgpt.utils import Audio
 
 
 def exception_handler(func):

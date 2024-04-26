@@ -1,7 +1,5 @@
 from dotenv import load_dotenv
 from os import environ
-from os import makedirs
-from pytgpt.utils import api_static_dir
 from pytgpt.utils import Audio
 from .utils import provider_keys
 
@@ -18,9 +16,6 @@ loglevel: int = int(environ.get("loglevel", 20))
 logfile = environ.get("logfile", "")
 voice: str = environ.get("voice", "Brian")
 
-bot_dir = api_static_dir / "bots"
-path_to_db = bot_dir / "telegram.db"
-
 assert (
     provider in provider_keys
 ), f"Provider '{provider}' is not one of {', '.join(provider_keys)}"
@@ -29,5 +24,3 @@ assert (
 assert (
     voice in Audio.all_voices
 ), f"Voice '{voice}' is not one of {', '.join(Audio.all_voices)}"
-
-makedirs(bot_dir, exist_ok=True)

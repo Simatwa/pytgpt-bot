@@ -4,6 +4,8 @@ from pytgpt_bot import __version__
 from os import environ
 import logging
 from pytgpt_bot.utils import provider_keys
+from pytgpt_bot.utils import bot_dir
+from shutil import rmtree
 
 context_settings: dict = dict(auto_envvar_prefix="PYTGPT-BOT")
 
@@ -88,11 +90,25 @@ def run(**kwargs):
         click.secho("[^] Quitting", fg="yellow")
 
 
+@click.command()
+@click.option("-y", "--yes", is_flag=True, help="Okay to confirmations")
+@click.help_option("-h", "--help")
+def clear(yes: bool):
+    """Clear bot's storage directory"""
+    if not yes and not click.confirm(
+        f"Are you sure to clear path '{bot_dir.as_posix()}'."
+    ):
+        return
+    rmtree(bot_dir, ignore_errors=True)
+    click.secho("[*] Path cleared successfully!", fg="yellow")
+
+
 def entry():
     """Cli entrypoint"""
     bot.add_command(run)
+    bot.add_command(clear)
     bot()
 
 
 if __name__ == "__main__":
-    run()
+    entry()

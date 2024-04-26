@@ -1,3 +1,6 @@
+from os import makedirs
+from pytgpt.utils import api_static_dir
+
 from pytgpt.opengpt import OPENGPT
 from pytgpt.koboldai import KOBOLDAI
 from pytgpt.phind import PHIND
@@ -19,3 +22,8 @@ provider_map: dict[str, object] = {
 }
 
 provider_keys: list = list(provider_map.keys())
+
+bot_dir = api_static_dir / "bots"
+path_to_db = bot_dir / "telegram.db"
+
+makedirs(bot_dir, exist_ok=True)
