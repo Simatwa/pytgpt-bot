@@ -3,6 +3,7 @@ from pytgpt.utils import Audio
 from pytgpt_bot import __version__
 from os import environ
 import logging
+from pytgpt_bot.utils import provider_keys
 
 context_settings: dict = dict(auto_envvar_prefix="PYTGPT-BOT")
 
@@ -59,6 +60,15 @@ def bot():
 )
 @click.option(
     "-a", "--admin-id", type=click.INT, help="Admin's Telegram user ID", default=12345
+)
+@click.option(
+    '-p',
+    '--provider',
+    type=click.Choice(
+        provider_keys
+    ),
+    help="tgpt-based llm providers",
+    default="auto"
 )
 @click.help_option("-h", "--help")
 def run(**kwargs):

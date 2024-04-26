@@ -6,15 +6,6 @@ from pytgpt.utils import AwesomePrompts
 from functools import wraps
 import logging
 
-from pytgpt.opengpt import OPENGPT
-from pytgpt.koboldai import KOBOLDAI
-from pytgpt.phind import PHIND
-from pytgpt.llama2 import LLAMA2
-from pytgpt.blackboxai import BLACKBOXAI
-from pytgpt.perplexity import PERPLEXITY
-from pytgpt.yepchat import YEPCHAT
-from pytgpt.auto import AUTO
-
 from .config import (
     bot_token,
     max_tokens,
@@ -25,21 +16,10 @@ from .config import (
     provider,
 )
 from .db import User, Chat
-from . import __version__
-
-provider_map: dict[str, object] = {
-    "opengpt": OPENGPT,
-    "koboldai": KOBOLDAI,
-    "phind": PHIND,
-    "llama2": LLAMA2,
-    "blackboxai": BLACKBOXAI,
-    "perplexity": PERPLEXITY,
-    "yepchat": YEPCHAT,
-    "auto": AUTO,
-}
+from .utils import provider_keys
+from .utils import provider_map
 
 chosen_provider: str = provider_map.get(provider)
-provider_keys: list = list(provider_map.keys())
 
 assert (
     chosen_provider
