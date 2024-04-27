@@ -18,7 +18,7 @@ setup(
     author="Smartwa",
     maintainer="Smartwa",
     author_email="simatwacaleb@proton.me",
-    description="Telegram bot for chatting, text-to-image and text-to-voice conversions",
+    description="Telegram bot for chatting, text-to-image and text-to-speech conversions",
     url="https://github.com/Simatwa/pytgpt-bot",
     project_urls={
         "Bug Report": "https://github.com/Simatwa/pytgpt-bot/issues/new",

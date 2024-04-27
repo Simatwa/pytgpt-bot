@@ -59,7 +59,7 @@ Alternatively, using CLI:
 
 - **/prodia**: Generates images from textual descriptions using the Prodia provider. This command offers a unique style or interpretation of the text descriptions compared to the default method.
 
-- **/audio**: Converts text to speech, providing users with the ability to listen to descriptions, instructions, or any text content read out by the AI.
+- **/speak**: Converts text to speech, providing users with the ability to listen to descriptions, instructions, or any text content read out by the AI.
 
 - **/intro**: Sets a new text for the chat intro. This command allows users to customize the chat introductory prompt which serves as a guide in the human-AI engagement.
 

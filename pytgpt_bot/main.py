@@ -51,13 +51,13 @@ logging.info(
 
 usage_info = (
     "Welcome to [PYTGPT-BOT](https://github.com/Simatwa/pytgpt-bot) ✨.\n"
-    "For chatting, text-to-image and text-to-voice conversions.\n\n"
+    "For chatting, text-to-image and text-to-speech conversions.\n\n"
     "Usage commands:\n"
     "1. /start : Show this help info 📚\n"
     "2. /chat : Chat with AI 🤖\n"
     "3. /image : Generate image from text 🖼️ (default)\n"
     "4. /prodia : Generate image from text 🎨 (Prodia)\n"
-    "5. /audio : Generate audio from text 🎧\n"
+    "5. /speak : Generate speech from text 🎧\n"
     "6. /intro : Set new text for chat intro 📝\n"
     "7. /voice : Set new voice for speech synthesis 🎙️\n"
     "8. /provider : Set new chat provider 🌐\n"
@@ -73,7 +73,7 @@ usage_info = (
     "\t\t\t/chat Hello there.\n"
     "\t\t\t/image Peaceful desert scene\n"
     "\t\t\t/prodia Clear cool shore view\n"
-    "\t\t\t/audio I am better than you.\n\n"
+    "\t\t\t/speak I am better than you.\n\n"
     f"[🌟 Star me on Github]({__repo__}) pytgpt-bot v{__version__}"
 )
 
@@ -101,14 +101,12 @@ def handler_formatter(text: bool = False, admin: bool = False, preserve: bool = 
         @wraps(func)
         def decorator(message: telebot.types.Message):
             try:
-                if message.chat.type=="private":
+                if message.chat.type == "private":
                     logging.info(
                         f"Serving user [{message.from_user.id}] ({message.from_user.full_name}) - Function [{func.__name__}]"
                     )
                 else:
-                    logging.info(
-                        f"Serving Group  - Function [{func.__name__}]"
-                    )
+                    logging.info(f"Serving Group  - Function [{func.__name__}]")
                 if message.text and message.text.startswith("/") and not preserve:
                     message.text = " ".join(message.text.split(" ")[1:])
 
@@ -188,7 +186,7 @@ def send_long_text(
 @handler_formatter()
 def home(message: telebot.types.Message):
     """Show help"""
-    #print(message)
+    # print(message)
     return bot.send_message(
         message.chat.id,
         text=(usage_info + admin_commands if User(message).is_admin else usage_info),
@@ -362,7 +360,6 @@ def check_current_settings(message: telebot.types.Message):
 
 @bot.message_handler(commands=["history"], is_chat_admin=True, is_chat_active=True)
 @bot.channel_post_handler(commands=["history"], is_chat_admin=True, is_chat_active=True)
-
 @handler_formatter()
 def check_chat_history(message: telebot.types.Message):
     user = User(message)
@@ -376,7 +373,6 @@ def check_chat_history(message: telebot.types.Message):
 
 @bot.message_handler(commands=["image", "img"], is_chat_active=True)
 @bot.channel_post_handler(commands=["image", "img"], is_chat_active=True)
-
 @handler_formatter(text=True)
 def text_to_image_default(message: telebot.types.Message):
     """Generate image using `image`"""
@@ -396,7 +392,6 @@ def text_to_image_default(message: telebot.types.Message):
 
 @bot.message_handler(commands=["prodia", "prod"], is_chat_active=True)
 @bot.channel_post_handler(commands=["prodia", "prod"], is_chat_active=True)
-
 @handler_formatter(text=True)
 def text_to_image_prodia(message: telebot.types.Message):
     """Generate image using `prodia`"""
@@ -410,8 +405,8 @@ def text_to_image_prodia(message: telebot.types.Message):
     )
 
 
-@bot.message_handler(commands=["audio", "aud"], is_chat_active=True)
-@bot.channel_post_handler(commands=["audio", "aud"], is_chat_active=True)
+@bot.message_handler(commands=["speak", "spe"], is_chat_active=True)
+@bot.channel_post_handler(commands=["speak", "spe"], is_chat_active=True)
 @handler_formatter(text=True)
 def text_to_audio(message: telebot.types.Message):
     """Convert text to audio"""
@@ -446,28 +441,25 @@ def reset_chat(message: telebot.types.Message):
     )
 
 
-@bot.message_handler(commands=['suspend'], is_chat_admin=True, is_chat_active=True)
-@bot.channel_post_handler(commands=['suspend'], is_chat_admin=True, is_chat_active=True)
+@bot.message_handler(commands=["suspend"], is_chat_admin=True, is_chat_active=True)
+@bot.channel_post_handler(commands=["suspend"], is_chat_admin=True, is_chat_active=True)
 @handler_formatter()
-def change_chat_status_to_inactive(message:telebot.types.Message):
+def change_chat_status_to_inactive(message: telebot.types.Message):
     chats = User(message).chat
     chats.is_active = False
     return bot.reply_to(
-        message,
-        text=f"Service Suspended 🚫.",
-        reply_markup=make_delete_markup(message)
+        message, text=f"Service Suspended 🚫.", reply_markup=make_delete_markup(message)
     )
 
-@bot.message_handler(commands=['resume'], is_chat_admin=True)
-@bot.channel_post_handler(commands=['resume'], is_chat_admin=True)
+
+@bot.message_handler(commands=["resume"], is_chat_admin=True)
+@bot.channel_post_handler(commands=["resume"], is_chat_admin=True)
 @handler_formatter()
-def change_chat_status_to_active(message:telebot.types.Message):
+def change_chat_status_to_active(message: telebot.types.Message):
     chat = User(message).chat
     chat.is_active = True
     return bot.reply_to(
-        message,
-        text=f"Service Resumed 🚀.",
-        reply_markup=make_delete_markup(message)
+        message, text=f"Service Resumed 🚀.", reply_markup=make_delete_markup(message)
     )
 
 
@@ -586,7 +578,6 @@ def is_action_for_chat(message: telebot.types.Message) -> bool:
 @bot.channel_post_handler(
     content_types=["text"], is_chat_active=True, func=is_action_for_chat
 )
-
 @handler_formatter(text=True)
 def text_chat(message: telebot.types.Message):
     """Text generation"""
