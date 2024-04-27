@@ -1,13 +1,13 @@
 from .models import Chat
 from .models import session
 from .config import admin_id
-from telebot.types import Message
+from telebot.types import Message, CallbackQuery
 
 
 class User:
     """User dummy model"""
 
-    def __init__(self, message: Message = None, user_id: int = None):
+    def __init__(self, message: Message | CallbackQuery = None, user_id: int = None):
         """Constructor
 
         Args:
@@ -15,7 +15,16 @@ class User:
             user_id (int): User id. Defaults to None
         """
         assert message or user_id, "Message or User id is required."
-        id = user_id or message.from_user.id
+
+        if user_id:
+            id = user_id
+
+        elif message.chat.type == "private":
+            id = message.from_user.id
+
+        else:
+            id = message.chat.id
+
         chat = session.query(Chat).filter_by(id=id).first()
         if chat:
             # chat exist

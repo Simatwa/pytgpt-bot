@@ -10,6 +10,7 @@ from pytgpt.perplexity import PERPLEXITY
 from pytgpt.yepchat import YEPCHAT
 from pytgpt.auto import AUTO
 from random import choice
+import telebot
 
 provider_map: dict[str, object] = {
     "opengpt": OPENGPT,
@@ -83,3 +84,19 @@ def get_random_emoji(mood: str = None) -> str:
     if not mood:
         mood = choice(emoji_keys)
     return choice(emojis[mood])
+
+
+def make_delete_markup(
+    message: telebot.types.Message,
+) -> telebot.types.InlineKeyboardMarkup:
+    """Creates delete markup
+
+    Args:
+        message (telebot.types.Message):
+    """
+    markup = telebot.types.InlineKeyboardMarkup(row_width=1)
+    callback_button = telebot.types.InlineKeyboardButton(
+        text="🗑️", callback_data=f"delete:{message.chat.id}:{message.id}"
+    )
+    markup.add(callback_button)
+    return markup

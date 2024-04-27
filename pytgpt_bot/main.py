@@ -17,14 +17,13 @@ from .config import (
     timeout,
     loglevel,
     logfile,
-    admin_id,
+    admin_ids,
     provider,
 )
 from .db import User
-from .utils import provider_keys
-from .utils import provider_map
-from .utils import get_random_emoji
+from .utils import provider_keys, get_random_emoji, provider_map, make_delete_markup
 from .models import session, Chat, create_all, drop_all
+from .filters import IsActiveFilter, IsBotOwnerFilter, IsAdminFilter
 
 chosen_provider: str = provider_map.get(provider)
 
@@ -47,7 +46,7 @@ bot = telebot.TeleBot(bot_token, disable_web_page_preview=True)
 bot.remove_webhook()
 
 logging.info(
-    f"Bot started sucessfully {get_random_emoji('happy')}. Admin ID - [{admin_id}]"
+    f"Bot started sucessfully {get_random_emoji('happy')}. Admin IDs - [{', '.join(admin_ids)}]"
 )
 
 usage_info = (
@@ -67,6 +66,8 @@ usage_info = (
     "11. /check : Check current settings ⚙️\n"
     "12. /reset : Start new chat thread 🔄\n"
     "13. /myid : Echo your Telegram ID 🆔\n"
+    "14. /suspend : Pause service for a while 🚫\n"
+    "15. /resume : Resume paused sevice 🚀\n"
     "default : Chat with AI.\n\n"
     f"For instances {get_random_emoji('love')}:\n"
     "\t\t\t/chat Hello there.\n"
@@ -100,16 +101,14 @@ def handler_formatter(text: bool = False, admin: bool = False, preserve: bool = 
         @wraps(func)
         def decorator(message: telebot.types.Message):
             try:
-                logging.info(
-                    f"Serving user [{message.from_user.id}] ({message.from_user.full_name}) - Function [{func.__name__}]"
-                )
-                if admin and not User(message).is_admin:
-                    return bot.reply_to(
-                        message,
-                        f"{get_random_emoji('angry')} Action restricted to admins only❗️",
-                        reply_markup=make_delete_markup(message),
+                if message.chat.type=="private":
+                    logging.info(
+                        f"Serving user [{message.from_user.id}] ({message.from_user.full_name}) - Function [{func.__name__}]"
                     )
-
+                else:
+                    logging.info(
+                        f"Serving Group  - Function [{func.__name__}]"
+                    )
                 if message.text and message.text.startswith("/") and not preserve:
                     message.text = " ".join(message.text.split(" ")[1:])
 
@@ -122,6 +121,7 @@ def handler_formatter(text: bool = False, admin: bool = False, preserve: bool = 
 
                 return func(message)
             except Exception as e:
+                logging.exception(e)
                 logging.error(f"Error on function - {func.__name__} - {e}")
                 logging.debug(str(e))
                 bot.reply_to(
@@ -133,22 +133,6 @@ def handler_formatter(text: bool = False, admin: bool = False, preserve: bool = 
         return decorator
 
     return main
-
-
-def make_delete_markup(
-    message: telebot.types.Message,
-) -> telebot.types.InlineKeyboardMarkup:
-    """Creates delete markup
-
-    Args:
-        message (telebot.types.Message):
-    """
-    markup = telebot.types.InlineKeyboardMarkup(row_width=1)
-    callback_button = telebot.types.InlineKeyboardButton(
-        text="🗑️", callback_data=f"delete:{message.chat.id}:{message.id}"
-    )
-    markup.add(callback_button)
-    return markup
 
 
 def send_and_add_delete_button(
@@ -199,11 +183,12 @@ def send_long_text(
         )
 
 
-@bot.message_handler(commands=["help", "start"])
+@bot.message_handler(commands=["help", "start"], is_chat_active=True)
+@bot.channel_post_handler(commands=["help", "start"], is_chat_active=True)
 @handler_formatter()
 def home(message: telebot.types.Message):
     """Show help"""
-
+    #print(message)
     return bot.send_message(
         message.chat.id,
         text=(usage_info + admin_commands if User(message).is_admin else usage_info),
@@ -212,7 +197,8 @@ def home(message: telebot.types.Message):
     )
 
 
-@bot.message_handler(commands=["myid"])
+@bot.message_handler(commands=["myid"], is_chat_admin=True)
+@bot.channel_post_handler(commands=["myid"], is_chat_admin=True)
 @handler_formatter()
 def echo_user_id(message: telebot.types.Message):
     return bot.reply_to(
@@ -222,7 +208,8 @@ def echo_user_id(message: telebot.types.Message):
     )
 
 
-@bot.message_handler(commands=["intro"])
+@bot.message_handler(commands=["intro"], is_chat_admin=True)
+@bot.channel_post_handler(commands=["intro"], is_chat_admin=True)
 @handler_formatter(text=True)
 def set_chat_intro(message: telebot.types.Message):
     """Set new value for chat intro"""
@@ -240,7 +227,8 @@ def set_chat_intro(message: telebot.types.Message):
     )
 
 
-@bot.message_handler(commands=["voice"])
+@bot.message_handler(commands=["voice"], is_chat_admin=True)
+@bot.channel_post_handler(commands=["voice"], is_chat_admin=True)
 @handler_formatter(text=False)
 def set_new_speech_voice(message: telebot.types.Message):
     """Set new voice for speech synthesis"""
@@ -277,7 +265,8 @@ def set_new_speech_voice_callback(call: telebot.types.CallbackQuery):
     )
 
 
-@bot.message_handler(commands=["provider"])
+@bot.message_handler(commands=["provider"], is_chat_admin=True)
+@bot.channel_post_handler(commands=["provider"], is_chat_admin=True)
 @handler_formatter(text=False)
 def set_new_text_provider(message: telebot.types.Message):
     """Set new text provider"""
@@ -312,7 +301,8 @@ def set_new_text_provider_callback(call: telebot.types.CallbackQuery):
     )
 
 
-@bot.message_handler(commands=["awesome"])
+@bot.message_handler(commands=["awesome"], is_chat_admin=True, is_chat_active=True)
+@bot.channel_post_handler(commands=["awesome"], is_chat_admin=True, is_chat_active=True)
 @handler_formatter(text=False)
 def set_awesome_prompt_as_chat_intro(message: telebot.types.Message):
     """Set awesome prompt as intro"""
@@ -349,12 +339,14 @@ def set_awesome_prompt_as_chat_intro_callback_handler(
     )
 
 
-@bot.message_handler(commands=["check"])
+@bot.message_handler(commands=["check"], is_chat_admin=True)
+@bot.channel_post_handler(commands=["check"], is_chat_admin=True)
 @handler_formatter()
 def check_current_settings(message: telebot.types.Message):
     """Check current user settings"""
     chat = User(message).chat
     current_user_settings = (
+        f"Is Active :  `{chat.is_active}`\n"
         f"Chat Length : `{len(chat.history)}`\n"
         f"Speech Voice : `{chat.voice}`\n"
         f"Chat Provider : `{chat.provider}`\n"
@@ -368,7 +360,9 @@ def check_current_settings(message: telebot.types.Message):
     )
 
 
-@bot.message_handler(commands=["history"])
+@bot.message_handler(commands=["history"], is_chat_admin=True, is_chat_active=True)
+@bot.channel_post_handler(commands=["history"], is_chat_admin=True, is_chat_active=True)
+
 @handler_formatter()
 def check_chat_history(message: telebot.types.Message):
     user = User(message)
@@ -380,7 +374,9 @@ def check_chat_history(message: telebot.types.Message):
     )
 
 
-@bot.message_handler(commands=["image", "img"])
+@bot.message_handler(commands=["image", "img"], is_chat_active=True)
+@bot.channel_post_handler(commands=["image", "img"], is_chat_active=True)
+
 @handler_formatter(text=True)
 def text_to_image_default(message: telebot.types.Message):
     """Generate image using `image`"""
@@ -398,7 +394,9 @@ def text_to_image_default(message: telebot.types.Message):
     )
 
 
-@bot.message_handler(commands=["prodia", "prod"])
+@bot.message_handler(commands=["prodia", "prod"], is_chat_active=True)
+@bot.channel_post_handler(commands=["prodia", "prod"], is_chat_active=True)
+
 @handler_formatter(text=True)
 def text_to_image_prodia(message: telebot.types.Message):
     """Generate image using `prodia`"""
@@ -412,7 +410,8 @@ def text_to_image_prodia(message: telebot.types.Message):
     )
 
 
-@bot.message_handler(commands=["audio", "aud"])
+@bot.message_handler(commands=["audio", "aud"], is_chat_active=True)
+@bot.channel_post_handler(commands=["audio", "aud"], is_chat_active=True)
 @handler_formatter(text=True)
 def text_to_audio(message: telebot.types.Message):
     """Convert text to audio"""
@@ -433,7 +432,8 @@ def text_to_audio(message: telebot.types.Message):
     )
 
 
-@bot.message_handler(commands=["reset"])
+@bot.message_handler(commands=["reset"], is_chat_admin=True, is_chat_active=True)
+@bot.channel_post_handler(commands=["reset"], is_chat_admin=True, is_chat_active=True)
 @handler_formatter()
 def reset_chat(message: telebot.types.Message):
     """Reset current chat thread"""
@@ -446,7 +446,32 @@ def reset_chat(message: telebot.types.Message):
     )
 
 
-@bot.message_handler(commands=["clear", "clear_chats"])
+@bot.message_handler(commands=['suspend'], is_chat_admin=True, is_chat_active=True)
+@bot.channel_post_handler(commands=['suspend'], is_chat_admin=True, is_chat_active=True)
+@handler_formatter()
+def change_chat_status_to_inactive(message:telebot.types.Message):
+    chats = User(message).chat
+    chats.is_active = False
+    return bot.reply_to(
+        message,
+        text=f"Service Suspended 🚫.",
+        reply_markup=make_delete_markup(message)
+    )
+
+@bot.message_handler(commands=['resume'], is_chat_admin=True)
+@bot.channel_post_handler(commands=['resume'], is_chat_admin=True)
+@handler_formatter()
+def change_chat_status_to_active(message:telebot.types.Message):
+    chat = User(message).chat
+    chat.is_active = True
+    return bot.reply_to(
+        message,
+        text=f"Service Resumed 🚀.",
+        reply_markup=make_delete_markup(message)
+    )
+
+
+@bot.message_handler(commands=["clear", "clear_chats"], is_bot_owner=True)
 @handler_formatter(admin=True)
 def clear_chats(message: telebot.types.Message):
     """Delete all chat entries"""
@@ -461,7 +486,7 @@ def clear_chats(message: telebot.types.Message):
     )
 
 
-@bot.message_handler(commands=["total", "total_chats"])
+@bot.message_handler(commands=["total", "total_chats"], is_bot_owner=True)
 @handler_formatter(admin=True)
 def total_chats_query(message: telebot.types.Message):
     """Query total chats"""
@@ -476,7 +501,7 @@ def total_chats_query(message: telebot.types.Message):
     )
 
 
-@bot.message_handler(commands=["drop", "drop_chats"])
+@bot.message_handler(commands=["drop", "drop_chats"], is_bot_owner=True)
 @handler_formatter(admin=True)
 def total_chats_table_and_logs(message: telebot.types.Message):
     """Drop chat table and create new"""
@@ -497,7 +522,7 @@ def total_chats_table_and_logs(message: telebot.types.Message):
     )
 
 
-@bot.message_handler(commands=["sql"])
+@bot.message_handler(commands=["sql"], is_bot_owner=True)
 @handler_formatter(admin=True, text=True)
 def run_sql_statement(message: telebot.types.Message):
     """Run sql statements against database"""
@@ -530,7 +555,7 @@ def run_sql_statement(message: telebot.types.Message):
         )
 
 
-@bot.message_handler(commands=["logs"])
+@bot.message_handler(commands=["logs"], is_bot_owner=True)
 @handler_formatter(admin=True)
 def check_current_settings(message: telebot.types.Message):
     """View bot logs"""
@@ -555,7 +580,13 @@ def is_action_for_chat(message: telebot.types.Message) -> bool:
     return True
 
 
-@bot.message_handler(content_types=["text"], func=is_action_for_chat)
+@bot.message_handler(
+    content_types=["text"], is_chat_active=True, func=is_action_for_chat
+)
+@bot.channel_post_handler(
+    content_types=["text"], is_chat_active=True, func=is_action_for_chat
+)
+
 @handler_formatter(text=True)
 def text_chat(message: telebot.types.Message):
     """Text generation"""
@@ -577,7 +608,8 @@ def text_chat(message: telebot.types.Message):
     send_long_text(message, ai_response)
 
 
-@bot.message_handler(func=lambda val: True)
+@bot.message_handler(func=lambda val: True, is_chat_active=True)
+@bot.channel_post_handler(func=lambda val: True, is_chat_active=True)
 def any_other_action(message):
     return bot.reply_to(
         message,
@@ -601,3 +633,8 @@ def delete_callback_handler(
         bot.delete_message(call.message.chat.id, call.message.id)
     except:
         pass
+
+
+bot.add_custom_filter(IsBotOwnerFilter())
+bot.add_custom_filter(IsAdminFilter(bot))
+bot.add_custom_filter(IsActiveFilter())

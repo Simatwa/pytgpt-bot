@@ -4,10 +4,11 @@ token=<Your-telegram-token>
 # Chat provider name such as phind, blackboxai, llama2 etc
 provider=auto
 
-## Telegram user id which translates to Bot Admin.
+## Telegram user id which translates to Bot Admins.
 # Privileges include checking logs, run sql commands
 # clear table etcs
 # To obtain it text live bot with command `/myid`
+# If many separate by comma e.g 1234, 56789
 admin-id=12345678
 
 # Tokens to be sampled upon completion and maximum chat-text length

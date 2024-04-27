@@ -51,13 +51,6 @@ Alternatively, using CLI:
 
 ## Features
 
-### Commands
-
-
-### Usage Information
-
-This section provides detailed instructions on how to use the various commands available in the bot.
-
 - **/start**: Displays the help information, offering a comprehensive list of available commands and their functionalities. This command is essential for users to quickly understand how to interact with the bot.
 
 - **/chat**: Initiate a natural language conversation with the AI. This command allows users to engage in interactive dialogues, ask questions, or make requests.
@@ -84,10 +77,11 @@ This section provides detailed instructions on how to use the various commands a
 
 - **/myid**: Echoes the user's Telegram ID. This command is useful for users who need to know their Telegram ID for various purposes, such as setting up bot admin.
 
+- **/suspend**: Pauses the bot's service temporarily. This command is useful for channel administrators who need to temporarily halt the bot's operations without deleting its data or settings. It's a way to manage the bot's availability based on operational needs.
+
+- **/resume**: Resumes the bot's service after it has been suspended. This command allows administrators to quickly bring the bot back online after a pause, ensuring that users can continue interacting with the bot without interruption.
+
 - `any other text`: An alias for `/chat`, allowing users to continue with chatting.
-
-
-### Administrative Commands
 
 
 ### Administrative Commands

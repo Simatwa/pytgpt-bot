@@ -10,7 +10,7 @@ assert environ.get("token"), "Export bot's token to the environment 😠"
 bot_token: str = environ.get("token")
 database: str = environ.get("database")
 provider: str = environ.get("provider", "auto")
-admin_id: int = int(environ.get("admin-id", 1234567))
+admin_id: str = environ.get("admin-id", "")
 max_tokens: int = int(environ.get("max-tokens", 600))
 timeout: int = int(environ.get("timeout", 30))
 loglevel: int = int(environ.get("loglevel", 20))
@@ -25,3 +25,5 @@ assert (
 assert (
     voice in Audio.all_voices
 ), f"Voice '{voice}' is not one of {', '.join(Audio.all_voices)}"
+
+admin_ids: list = admin_id.replace(" ", "").split(",")
