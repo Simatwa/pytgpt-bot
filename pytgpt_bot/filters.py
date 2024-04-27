@@ -53,5 +53,5 @@ class IsAdminFilter(SimpleCustomFilter):
             ).status in ["creator", "administrator"]
 
         return self._bot.get_chat_member(
-            message.chat.id,
+            message.chat.id, message.from_user.id
         ).status in ["creator", "administrator"]
