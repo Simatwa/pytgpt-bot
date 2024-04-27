@@ -1,6 +1,7 @@
 import telebot
 import json
 import logging
+import telebot.util as telebot_util
 import pytgpt.imager as image_generator
 from pytgpt.utils import Audio as audio_generator
 from pytgpt.utils import Conversation
@@ -191,19 +192,11 @@ def send_long_text(
         add_delete (bool). Add delete button. Defaults to False.
         parse_mode (str): __. Defaults to Markdown.
     """
-    max_length = 4096
     take_action = send_and_add_delete_button if add_delete else bot.send_message
-    if len(text) <= max_length:
-        # bot.send_message(message.chat.id, text)
+    for part in telebot_util.smart_split(text):
         take_action(
-            message if add_delete else message.chat.id, text, parse_mode=parse_mode
+            message if add_delete else message.chat.id, part, parse_mode=parse_mode
         )
-    else:
-        parts = [text[i : i + max_length] for i in range(0, len(text), max_length)]
-        for part in parts:
-            take_action(
-                message if add_delete else message.chat.id, part, parse_mode=parse_mode
-            )
 
 
 @bot.message_handler(commands=["help", "start"])
