@@ -44,13 +44,13 @@ class IsAdminFilter(SimpleCustomFilter):
         """
         :meta private:
         """
-        if message.chat.type == "private":
-            return True
-
-        elif isinstance(message, types.CallbackQuery):
+        if isinstance(message, types.CallbackQuery):
             return self._bot.get_chat_member(
                 message.message.chat.id, message.from_user.id
             ).status in ["creator", "administrator"]
+        
+        elif message.chat.type == "private":
+            return True
 
         return self._bot.get_chat_member(
             message.chat.id, message.from_user.id
