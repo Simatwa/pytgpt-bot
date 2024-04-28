@@ -123,7 +123,7 @@ To make the administrative commands more understandable, let's simplify the desc
 
 ## Further Tips
 
-- The bot features inline query for text generation. The query must end with *three ellipsis*. Remember to enable the mode from [@BotFather](https://t.me/pytgpt_bot). `/setinline`
+- The bot features inline query for text generation. The query must end with *three ellipsis* `...`. Remember to enable the mode from [@BotFather](https://t.me/pytgpt_bot). `/setinline`
 - You can as well add the bot to a Telegram channel. Grant it read and delete permissions. The access commands will still work out. `@bot_username <text>` will trigger **text generation**.
 - Channel Admin will control the bot access using the `/suspend` and `/resume` commands. *(Experimental).*
 
