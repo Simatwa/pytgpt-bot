@@ -3,9 +3,9 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import Column, Integer, Text, String, Boolean
 from pytgpt.utils import Conversation
-from .config import database as database_str
-from .config import provider as default_provider
-from .config import voice
+from pytgpt_bot.config import database as database_str
+from pytgpt_bot.config import provider as default_provider
+from pytgpt_bot.config import voice
 
 if not database_str:
     from .utils import path_to_default_db

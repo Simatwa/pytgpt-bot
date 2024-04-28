@@ -1,6 +1,6 @@
-from .models import Chat
-from .models import session
-from .config import admin_id
+from pytgpt_bot.models import Chat
+from pytgpt_bot.models import session
+from pytgpt_bot.config import admin_id
 from telebot.types import Message, CallbackQuery
 
 

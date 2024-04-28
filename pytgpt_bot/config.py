@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 from os import environ
 from pytgpt.utils import Audio
-from .utils import provider_keys
+from pytgpt_bot.utils import provider_keys
 
 load_dotenv()
 

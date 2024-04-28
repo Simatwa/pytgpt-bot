@@ -1,7 +1,8 @@
 from telebot.custom_filters import SimpleCustomFilter
-from telebot import types
-from .db import User
-from .config import admin_ids
+from telebot import types, TeleBot
+from telebot.util import extract_command, extract_arguments
+from pytgpt_bot.db import User
+from pytgpt_bot.config import admin_ids
 
 
 class IsActiveFilter(SimpleCustomFilter):
@@ -48,10 +49,40 @@ class IsAdminFilter(SimpleCustomFilter):
             return self._bot.get_chat_member(
                 message.message.chat.id, message.from_user.id
             ).status in ["creator", "administrator"]
-        
+
         elif message.chat.type == "private":
             return True
 
         return self._bot.get_chat_member(
             message.chat.id, message.from_user.id
         ).status in ["creator", "administrator"]
+
+
+class IsBotTaggedFilter(SimpleCustomFilter):
+    """Checks if bot is tagged"""
+
+    key: str = "is_bot_tagged"
+
+    def __init__(self, bot_info: types.User):
+        """Constructor
+
+        Args:
+            bot_info (types.User): Bot info.
+        """
+        self.bot_info = bot_info
+
+    def check(self, message: types.Message):
+        if message.text:
+            return "@" + self.bot_info.username == message.text.split(" ")[0]
+
+        return False
+
+
+class IsChatCommandFilter(SimpleCustomFilter):
+    """Checks if text parsed is for tex-generation"""
+
+    key: str = "is_chat_command"
+
+    def check(self, message: types.Message):
+        command = extract_command(message.text)
+        return command == "chat" if command else True

@@ -9,9 +9,9 @@ from pytgpt.utils import AwesomePrompts
 from functools import wraps
 from sqlalchemy import text
 
-from . import __version__, __repo__
+from pytgpt_bot import __version__, __repo__
 
-from .config import (
+from pytgpt_bot.config import (
     bot_token,
     max_tokens,
     timeout,
@@ -20,10 +20,21 @@ from .config import (
     admin_ids,
     provider,
 )
-from .db import User
-from .utils import provider_keys, get_random_emoji, provider_map, make_delete_markup
-from .models import session, Chat, create_all, drop_all
-from .filters import IsActiveFilter, IsBotOwnerFilter, IsAdminFilter
+from pytgpt_bot.db import User
+from pytgpt_bot.utils import (
+    provider_keys,
+    get_random_emoji,
+    provider_map,
+    make_delete_markup,
+)
+from pytgpt_bot.models import session, Chat, create_all, drop_all
+from pytgpt_bot.filters import (
+    IsActiveFilter,
+    IsBotOwnerFilter,
+    IsAdminFilter,
+    IsBotTaggedFilter,
+    IsChatCommandFilter,
+)
 
 chosen_provider: str = provider_map.get(provider)
 
@@ -107,8 +118,8 @@ def handler_formatter(text: bool = False, admin: bool = False, preserve: bool = 
                     )
                 else:
                     logging.info(f"Serving Group  - Function [{func.__name__}]")
-                if message.text and message.text.startswith("/") and not preserve:
-                    message.text = " ".join(message.text.split(" ")[1:])
+                if not preserve:
+                    message.text = telebot_util.extract_arguments(message.text)
 
                 if text and not message.text:
                     return bot.reply_to(
@@ -423,7 +434,7 @@ def text_to_audio(message: telebot.types.Message):
         caption=message.text,
         reply_markup=make_delete_markup(message),
         performer=voice,
-        title="Text-to-Voice",
+        title="Text-to-Speech",
     )
 
 
@@ -562,23 +573,13 @@ def check_current_settings(message: telebot.types.Message):
     return send_long_text(message, contents, add_delete=True, parse_mode=None)
 
 
-def is_action_for_chat(message: telebot.types.Message) -> bool:
-    splitted_text = message.text.split(" ")
-    if splitted_text[0].startswith("/"):
-        if splitted_text[0] == "/chat":
-            return True
-        else:
-            return False
-    return True
-
-
-@bot.message_handler(
-    content_types=["text"], is_chat_active=True, func=is_action_for_chat
-)
+@bot.message_handler(content_types=["text"], is_chat_active=True, is_chat_command=True)
 @bot.channel_post_handler(
-    content_types=["text"], is_chat_active=True, func=is_action_for_chat
+    content_types=["text"],
+    is_chat_active=True,
+    commands=["chat"],
 )
-@handler_formatter(text=True)
+@handler_formatter()
 def text_chat(message: telebot.types.Message):
     """Text generation"""
     user = User(message)
@@ -599,8 +600,8 @@ def text_chat(message: telebot.types.Message):
     send_long_text(message, ai_response)
 
 
-@bot.message_handler(func=lambda val: True, is_chat_active=True)
-@bot.channel_post_handler(func=lambda val: True, is_chat_active=True)
+@bot.message_handler(is_chat_active=True)
+@bot.channel_post_handler(is_chat_active=True, is_bot_tagged=True)
 def any_other_action(message):
     return bot.reply_to(
         message,
@@ -629,3 +630,5 @@ def delete_callback_handler(
 bot.add_custom_filter(IsBotOwnerFilter())
 bot.add_custom_filter(IsAdminFilter(bot))
 bot.add_custom_filter(IsActiveFilter())
+bot.add_custom_filter(IsBotTaggedFilter(bot.get_me()))
+bot.add_custom_filter(IsChatCommandFilter())
