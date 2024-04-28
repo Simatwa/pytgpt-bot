@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, Text, String, Boolean
 from pytgpt.utils import Conversation
 from pytgpt_bot.config import database as database_str
@@ -31,6 +32,13 @@ class Chat(Base):
     history = Column(Text, default="")
     voice = Column(String(30), default=voice, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
+
+
+class Temp(Base):
+    __tablename__ = "temps"
+    uuid = Column(String(48), primary_key=True)
+    prompt = Column(Text)
+    provider = Column(String(20))
 
 
 def create_all():

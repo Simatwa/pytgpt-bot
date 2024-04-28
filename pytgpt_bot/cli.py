@@ -18,7 +18,7 @@ context_settings: dict = dict(auto_envvar_prefix="PYTGPT-BOT")
 )
 @click.help_option("-h", "--help")
 def bot():
-    """Telegram bot for text generation, text-to-image and text-to-audio conversions."""
+    """Telegram bot for text generation, text-to-image and text-to-speech conversions."""
     pass
 
 
@@ -43,7 +43,7 @@ def bot():
     "--voice",
     type=click.Choice(Audio.all_voices),
     metavar="|".join(Audio.all_voices[:10]),
-    help="The voice to use for speech synthesis",
+    help="The default voice for speech synthesis",
     default="Brian",
 )
 @click.option(
@@ -89,7 +89,11 @@ def run(**kwargs):
     try:
         from pytgpt_bot.main import bot
 
-        bot.infinity_polling(timeout=kwargs.get("timeout"), skip_pending=True)
+        bot.infinity_polling(
+            timeout=kwargs.get("timeout"),
+            skip_pending=True,
+            long_polling_timeout=kwargs.get("timeout"),
+        )
     except Exception as e:
         logging.error(e.args[1] if e.args and len(e.args) > 1 else str(e))
         click.secho("[^] Quitting", fg="yellow")

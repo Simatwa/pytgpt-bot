@@ -8,6 +8,7 @@ from pytgpt.utils import Conversation
 from pytgpt.utils import AwesomePrompts
 from functools import wraps
 from sqlalchemy import text
+from uuid import uuid4
 
 from pytgpt_bot import __version__, __repo__
 
@@ -26,9 +27,8 @@ from pytgpt_bot.utils import (
     get_random_emoji,
     provider_map,
     make_delete_markup,
-    make_regenerate_and_delete_markup,
 )
-from pytgpt_bot.models import session, Chat, create_all, drop_all
+from pytgpt_bot.models import session, Chat, Temp, create_all, drop_all
 from pytgpt_bot.filters import (
     IsActiveFilter,
     IsBotOwnerFilter,
@@ -91,11 +91,11 @@ usage_info = (
 
 admin_commands = (
     "\n\nAdmin Commands\n"
-    "/clear : Clear all chats 🧹\n"
+    "/clear : Clear all tables 🧹\n"
     "/total : Total chats available 📊\n"
-    "/drop : Clear entire chat table and bot logs 🗑️\n"
+    "/drop : Delete all tables and bot logs 🗑️\n"
     "/sql : Run sql statements against database ⏳\n"
-    "/logs : View bot logs 📜"
+    "/logs : View bot's log 📜"
 )
 
 
@@ -202,6 +202,38 @@ def send_long_text(
                 bot.reply_to(message, part, parse_mode=parse_mode)
             else:
                 bot.send_message(message.chat.id, part, parse_mode=parse_mode)
+
+
+def make_regenerate_and_delete_markup(
+    message: telebot.types.Message, provider: str, prompt: str
+) -> telebot.types.InlineKeyboardMarkup:
+    """Makes a markup for deleting and regenerating images and speeches (media).
+
+    Args:
+        message (telebot.types.Message): Message object.
+        provider (str): Image provider. default/prodia.
+        prompt (str): text
+
+    Returns:
+        telebot.types.InlineKeyboardMarkup: Markup
+    """
+    markup = telebot.types.InlineKeyboardMarkup(row_width=2)
+    uuid = uuid4().__str__()
+    session.add(
+        Temp(
+            uuid=uuid,
+            provider=provider,
+            prompt=prompt,
+        )
+    )
+    regenerate_button = telebot.types.InlineKeyboardButton(
+        text="♻️", callback_data=f"media:{message.from_user.id}:{uuid}"
+    )
+    delete_button = telebot.types.InlineKeyboardButton(
+        text="🗑️", callback_data=f"delete:{message.chat.id}:{message.id}"
+    )
+    markup.add(regenerate_button, delete_button)
+    return markup
 
 
 @bot.message_handler(commands=["help", "start"], is_chat_active=True)
@@ -507,17 +539,18 @@ def change_chat_status_to_active(message: telebot.types.Message):
     )
 
 
-@bot.message_handler(commands=["clear", "clear_chats"], is_bot_owner=True)
+@bot.message_handler(commands=["clear", "clear_tables"], is_bot_owner=True)
 @handler_formatter()
 def clear_chats(message: telebot.types.Message):
-    """Delete all chat entries"""
+    """Delete all Tables"""
     session.query(Chat).delete()
+    session.query(Temp).delete()
     logging.warning(
         f"Clearing Chats - [{message.from_user.full_name}] ({message.from_user.id}, {message.from_user.username})"
     )
     return bot.reply_to(
         message,
-        f"{get_random_emoji('love')} Chats cleared successfully.",
+        f"{get_random_emoji('love')} Tables cleared successfully.",
         reply_markup=make_delete_markup(message),
     )
 
@@ -537,23 +570,24 @@ def total_chats_query(message: telebot.types.Message):
     )
 
 
-@bot.message_handler(commands=["drop", "drop_chats"], is_bot_owner=True)
+@bot.message_handler(commands=["drop", "drop_tables"], is_bot_owner=True)
 @handler_formatter()
 def total_chats_table_and_logs(message: telebot.types.Message):
-    """Drop chat table and create new"""
+    """Drop all tables and create new"""
     if logfile:
         with open(logfile, "w") as fh:
-            fh.write(
-                f"ADMIN CLEARED LOGS & DROPPED CHAT TABLE [{message.from_user.id}] - ({message.from_user.full_name})\n"
-            )
+            pass
+        logging.info(
+            f"ADMIN CLEARED LOGS & DROPPED CHAT TABLE [{message.from_user.id}] - ({message.from_user.full_name})\n"
+        )
     logging.warning(
-        f"Dropping Chat table and reinitialize - [{message.from_user.full_name}] ({message.from_user.id}, {message.from_user.username})"
+        f"Dropping all tables and recreate - [{message.from_user.full_name}] ({message.from_user.id}, {message.from_user.username})"
     )
     drop_all()
     create_all()
     return bot.reply_to(
         message,
-        f"{get_random_emoji('love')} Chat table and bot logs dropped and new one created.",
+        f"{get_random_emoji('love')} All tables dropped and logs cleared. New one created.",
         reply_markup=make_delete_markup(message),
     )
 
@@ -612,7 +646,6 @@ def check_current_settings(message: telebot.types.Message):
     is_chat_active=True,
     commands=["chat"],
 )
-@handler_formatter()
 def text_chat(message: telebot.types.Message):
     """Text generation"""
     user = User(message)
@@ -633,20 +666,32 @@ def text_chat(message: telebot.types.Message):
     send_long_text(message, ai_response, as_reply=False if message.from_user else True)
 
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith("media::"))
+@bot.callback_query_handler(func=lambda call: call.data.startswith("media:"))
 def media_regeneration_callback_handler(
     call: telebot.types.CallbackQuery,
 ):
     """Media regeneration callback handler"""
-    action, provider, prompt = call.data.split("::")
+    action, user_id, uuid = call.data.split(":")
     message = call.message
-    message.text = prompt
-    if provider == "prodia":
-        return text_to_image_prodia(message)
-    elif provider == "default":
-        return text_to_image_default(message)
-    elif provider == "speech":
-        return text_to_speech(message)
+    message.from_user.id = int(user_id)
+    temp = session.query(Temp).filter_by(uuid=uuid).first()
+
+    if temp:
+        message.text = temp.prompt
+        if temp.provider == "prodia":
+            return text_to_image_prodia(message)
+
+        elif temp.provider == "default":
+            return text_to_image_default(message)
+
+        elif temp.provider == "speech":
+            return text_to_speech(message)
+    else:
+        send_and_add_delete_button(
+            message,
+            f"{get_random_emoji('angry')} Cache containing that prompt was cleared!",
+            as_reply=True,
+        )
 
 
 @bot.inline_handler(lambda query: query.query.endswith("..."))
@@ -695,12 +740,12 @@ def any_other_action(message):
     )
 
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith("delete::"))
+@bot.callback_query_handler(func=lambda call: call.data.startswith("delete:"))
 def delete_callback_handler(
     call: telebot.types.CallbackQuery,
 ):
     """Delete callback handler"""
-    action, trigger_chat_id, trigger_message_id = call.data.split("::")
+    action, trigger_chat_id, trigger_message_id = call.data.split(":")
     try:
         bot.delete_message(trigger_chat_id, trigger_message_id)
     except:

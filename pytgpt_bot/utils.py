@@ -96,31 +96,7 @@ def make_delete_markup(
     """
     markup = telebot.types.InlineKeyboardMarkup(row_width=1)
     callback_button = telebot.types.InlineKeyboardButton(
-        text="🗑️", callback_data=f"delete::{message.chat.id}::{message.id}"
+        text="🗑️", callback_data=f"delete:{message.chat.id}:{message.id}"
     )
     markup.add(callback_button)
-    return markup
-
-
-def make_regenerate_and_delete_markup(
-    message: telebot.types.Message, provider: str, prompt: str
-) -> telebot.types.InlineKeyboardMarkup:
-    """Make a markup for deleting and regenerating images and speeches.
-
-    Args:
-        message (telebot.types.Message): Message object.
-        provider (str): Image provider. default/prodia.
-        prompt (str): text
-
-    Returns:
-        telebot.types.InlineKeyboardMarkup: Markup
-    """
-    markup = telebot.types.InlineKeyboardMarkup(row_width=2)
-    regenerate_button = telebot.types.InlineKeyboardButton(
-        text="♻️", callback_data=f"media::{provider}::{prompt}"
-    )
-    delete_button = telebot.types.InlineKeyboardButton(
-        text="🗑️", callback_data=f"delete::{message.chat.id}::{message.id}"
-    )
-    markup.add(regenerate_button, delete_button)
     return markup

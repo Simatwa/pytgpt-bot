@@ -9,4 +9,7 @@ load_dotenv(dotenv_path)
 from pytgpt_bot.main import bot
 
 if __name__ == "__main__":
-    bot.infinity_polling(timeout=int(os.environ.get("timeout", 30)))
+    timeout = int(os.environ.get("timeout", 30))
+    bot.infinity_polling(
+        timeout=timeout, skip_pending=True, long_polling_timeout=timeout
+    )
