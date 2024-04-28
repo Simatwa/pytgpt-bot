@@ -104,10 +104,6 @@ Alternatively, using CLI:
 
 ### Administrative Commands
 
-To make the administrative commands more understandable, let's simplify the descriptions and provide a bit more context for each command. This should help administrators manage the bot more effectively.
-
-### Simplified Administrative Commands
-
 - **/clear**: Use this command to remove all chat data from the bot's database. It's a powerful tool, so use it carefully to avoid losing important data.
 
 - **/total**: This command shows you the total number of chats the bot has handled. It's a quick way to see how much interaction the bot has had.
