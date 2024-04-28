@@ -51,50 +51,81 @@ Alternatively, using CLI:
 
 ## Features
 
-- **/start**: Displays the help information, offering a comprehensive list of available commands and their functionalities. This command is essential for users to quickly understand how to interact with the bot.
+### Access Commands
 
-- **/chat**: Initiate a natural language conversation with the AI. This command allows users to engage in interactive dialogues, ask questions, or make requests.
+- **/start**: This command shows you how to use the bot. It's like a guidebook for all the commands and what they do.
 
-- **/image**: Generates images from textual descriptions using the default provider. This feature enables users to visualize ideas or concepts through images.
+- **/chat**: Use this to talk to the AI. You can ask questions, make requests, or just chat about anything.
 
-- **/prodia**: Generates images from textual descriptions using the Prodia provider. This command offers a unique style or interpretation of the text descriptions compared to the default method.
+- **/image**: Want to see what something looks like? Type a description, and this command will create an image for you.
 
-- **/speak**: Converts text to speech, providing users with the ability to listen to descriptions, instructions, or any text content read out by the AI.
+- **/prodia**: Similar to `/image`, but it gives you a different style of image.
 
-- **/intro**: Sets a new text for the chat intro. This command allows users to customize the chat introductory prompt which serves as a guide in the human-AI engagement.
+- **/speak**: If you prefer listening to text instead of reading it, use this command to have the AI read out text for you.
 
-- **/voice**: Sets a new voice for speech synthesis. This command enables users to choose from different voices for the AI to use when generating audio from text.
+- **/intro**: Sets a new text for the chat intro.
 
-- **/provider**: Sets a new chat provider. This command allows users to switch between different providers for various functionalities, such as `phind`, `llama2`, `koboldai` etc.
+- **/voice**: Choose how the AI's voice sounds when it reads out text.
 
-- **/awesome**: Sets predefined prompt as `chat intro`. Browse over 200 of them.
+- **/provider**: Switch between different AI providers for various features.
 
-- **/history**: Provides users with the ability to view the history of their chats with the bot. This command is useful for reviewing past interactions or finding specific information from previous conversations.
+- **/awesome**: Browse through a selection of cool chat intros.
 
-- **/check**: Offers an overview of the bot's current configuration, including any custom settings applied by the user.
+- **/history**: See past conversations with the bot.
 
-- **/reset**: Resets the chat history and starts a new conversation thread. This command is useful for users who wish to start fresh or clear their chat history for privacy reasons.
+- **/check**: See what settings are currently active for your bot.
 
-- **/myid**: Echoes the user's Telegram ID. This command is useful for users who need to know their Telegram ID for various purposes, such as setting up bot admin.
+- **/reset**: Start a new conversation from scratch.
 
-- **/suspend**: Pauses the bot's service temporarily. This command is useful for channel administrators who need to temporarily halt the bot's operations without deleting its data or settings. It's a way to manage the bot's availability based on operational needs.
+- **/myid**: Find out your Telegram ID.
 
-- **/resume**: Resumes the bot's service after it has been suspended. This command allows administrators to quickly bring the bot back online after a pause, ensuring that users can continue interacting with the bot without interruption.
+- **/suspend**: Temporarily stop the bot from responding.
 
-- `any other text`: An alias for `/chat`, allowing users to continue with chatting.
+- **/resume**: Restart the bot after it's been suspended.
 
+- **Any other text**: Just type anything to continue chatting.
 
 ### Administrative Commands
 
-- `/clear`: Clears all chats. This command is used to remove all chat data from the bot's database. It's a powerful command that should be used with caution, as it will delete all chat history.
+- **/clear**: Remove all chat data from the bot's database. Be careful with this one!
 
-- `/total`: Shows the total number of chats available. This command provides an overview of the current chat data stored in the bot's database, helping administrators understand the volume of interactions the bot has had.
+- **/total**: See how many chats the bot has had.
 
-- `/drop`: Clears the entire chat table and bot logs. Similar to `/clear`, this command removes all data from the chat table in the database. It's a more drastic measure than `/clear`, as it completely wipes out all chat data and current contents of log file.
+- **/drop**: Delete everything from the chat table and bot logs. This is more extreme than `/clear`.
 
-- `/sql`: Allows running SQL statements against the database. This command provides a way for administrators to directly interact with the bot's database using SQL queries. It's a powerful tool for managing and analyzing the bot's data but should be used with caution to avoid unintended data loss or corruption.
+- **/sql**: Run SQL queries on the bot's database. Use this with caution!
 
-- `/logs`: Checks the logs. This command is used to access the bot's logs, which can provide insights into the bot's activity, errors, and user interactions. It's a valuable tool for monitoring and troubleshooting the bot's performance.
+- **/logs**: Check the bot's logs for activity, errors, and user interactions.
+
+- `any other text`: An alias for `/chat`, allowing users to continue with chatting.
+
+> [!TIP]
+> For a better understanding of these commands, try interacting with a running bot from [@pytgpt_bot](https://t.me/pytgpt_bot). This can give you a practical idea of how the bot works and how to use it effectively.
+
+### Administrative Commands
+
+To make the administrative commands more understandable, let's simplify the descriptions and provide a bit more context for each command. This should help administrators manage the bot more effectively.
+
+### Simplified Administrative Commands
+
+- **/clear**: Use this command to remove all chat data from the bot's database. It's a powerful tool, so use it carefully to avoid losing important data.
+
+- **/total**: This command shows you the total number of chats the bot has handled. It's a quick way to see how much interaction the bot has had.
+
+- **/drop**: If you need to completely wipe out all chat data and logs, use this command. It's more extreme than `/clear` and should be used with caution to avoid losing all data.
+
+- **/sql**: Want to directly interact with the bot's database? This command lets you run SQL queries. It's a powerful feature for managing and analyzing data, but be cautious to avoid mistakes.
+
+- **/logs**: This command gives you access to the bot's logs. It's useful for monitoring the bot's activity, spotting errors, and understanding user interactions.
+
+> [!IMPORTANT]
+> Administrative commands are restricted to the users whose Telegram IDs are specified in the [.env](https://github.com/Simatwa/pytgpt-bot/blob/308f6079d153a429c445649896840fdc7cbfac11/env#L12) file.
+
+## Further Tips
+
+- The bot features inline query for text generation. The query must end with *three ellipsis*. Remember to enable the mode from [@BotFather](https://t.me/pytgpt_bot). `/setinline`
+- You can as well add the bot to a Telegram channel. Grant it read and delete permissions. The access commands will still work out. `@bot_username <text>` will trigger **text generation**.
+- Channel Admin will control the bot access using the `/suspend` and `/resume` commands. *(Experimental).*
 
 ## Support and Feedback
 

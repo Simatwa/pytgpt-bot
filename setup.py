@@ -13,7 +13,7 @@ def read_contents(path: str) -> str:
 setup(
     name="pytgpt-bot",
     packages=["pytgpt_bot"],
-    version="0.1.2",
+    version="0.1.3",
     license="MIT",
     author="Smartwa",
     maintainer="Smartwa",
@@ -49,7 +49,7 @@ setup(
         "telegrambot",
         "pytelegrambot",
         "chatbot",
-        "text-to-audio",
+        "text-to-speech",
         "text-to-image",
     ],
     long_description=read_contents("README.md"),

@@ -8,7 +8,7 @@ from pytgpt_bot.config import provider as default_provider
 from pytgpt_bot.config import voice
 
 if not database_str:
-    from .utils import path_to_default_db
+    from pytgpt_bot.utils import path_to_default_db
 
     database_str: str = f"sqlite:///{path_to_default_db.as_posix()}"
 

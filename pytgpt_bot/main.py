@@ -26,6 +26,7 @@ from pytgpt_bot.utils import (
     get_random_emoji,
     provider_map,
     make_delete_markup,
+    make_regenerate_and_delete_markup,
 )
 from pytgpt_bot.models import session, Chat, create_all, drop_all
 from pytgpt_bot.filters import (
@@ -98,7 +99,7 @@ admin_commands = (
 )
 
 
-def handler_formatter(text: bool = False, admin: bool = False, preserve: bool = False):
+def handler_formatter(text: bool = False, preserve: bool = False):
     """Handles common message handler verification and execptions
 
     Args:
@@ -130,8 +131,10 @@ def handler_formatter(text: bool = False, admin: bool = False, preserve: bool = 
 
                 return func(message)
             except Exception as e:
-                logging.exception(e)
-                logging.error(f"Error on function - {func.__name__} - {e}")
+                # logging.exception(e)
+                logging.error(
+                    f"Error on function - {func.__name__} - {e.args[1] if e.args and len(e.args)>1 else e}"
+                )
                 logging.debug(str(e))
                 bot.reply_to(
                     message,
@@ -175,7 +178,8 @@ def send_long_text(
     message: telebot.types.Message,
     text: str,
     add_delete: bool = False,
-    parse_mode="Markdown",
+    parse_mode: str = "Markdown",
+    as_reply: bool = False,
 ):
     """Send texts longer than 4096 long
 
@@ -184,12 +188,20 @@ def send_long_text(
         text (str): Text to be sent.
         add_delete (bool). Add delete button. Defaults to False.
         parse_mode (str): __. Defaults to Markdown.
+        as_reply (bool). Highlight the user message. Default to False.
     """
-    take_action = send_and_add_delete_button if add_delete else bot.send_message
-    for part in telebot_util.smart_split(text):
-        take_action(
-            message if add_delete else message.chat.id, part, parse_mode=parse_mode
-        )
+    parts: list = telebot_util.smart_split(text)
+    if add_delete:
+        for part in parts:
+            send_and_add_delete_button(
+                message, part, parse_mode=parse_mode, as_reply=as_reply
+            )
+    else:
+        for part in parts:
+            if as_reply:
+                bot.reply_to(message, part, parse_mode=parse_mode)
+            else:
+                bot.send_message(message.chat.id, part, parse_mode=parse_mode)
 
 
 @bot.message_handler(commands=["help", "start"], is_chat_active=True)
@@ -258,7 +270,7 @@ def set_new_speech_voice(message: telebot.types.Message):
 @bot.callback_query_handler(
     func=lambda call: call.data.split(":")[0] in audio_generator.all_voices
 )
-def set_new_speech_voice_callback(call: telebot.types.CallbackQuery):
+def set_new_speech_voice_callback_handler(call: telebot.types.CallbackQuery):
     """Set new voice for speech synthesis callback handler"""
     bot.delete_message(call.message.chat.id, call.message.id)
     voice, user_id = call.data.split(":")
@@ -277,7 +289,7 @@ def set_new_speech_voice_callback(call: telebot.types.CallbackQuery):
 @bot.message_handler(commands=["provider"], is_chat_admin=True)
 @bot.channel_post_handler(commands=["provider"], is_chat_admin=True)
 @handler_formatter(text=False)
-def set_new_text_provider(message: telebot.types.Message):
+def set_new_chat_provider(message: telebot.types.Message):
     """Set new text provider"""
     user_id: str = message.from_user.id
     markup = telebot.types.InlineKeyboardMarkup(row_width=2)
@@ -294,7 +306,7 @@ def set_new_text_provider(message: telebot.types.Message):
 
 
 @bot.callback_query_handler(func=lambda call: call.data.split(":")[0] in provider_keys)
-def set_new_text_provider_callback(call: telebot.types.CallbackQuery):
+def set_new_chat_provider_callback_handler(call: telebot.types.CallbackQuery):
     """Set new text provider callback handler"""
     bot.delete_message(call.message.chat.id, call.message.id)
     provider, user_id = call.data.split(":")
@@ -382,11 +394,8 @@ def check_chat_history(message: telebot.types.Message):
     )
 
 
-@bot.message_handler(commands=["image", "img"], is_chat_active=True)
-@bot.channel_post_handler(commands=["image", "img"], is_chat_active=True)
-@handler_formatter(text=True)
 def text_to_image_default(message: telebot.types.Message):
-    """Generate image using `image`"""
+    """Shared obj : Generate image using `image`"""
     bot.send_chat_action(message.chat.id, "upload_photo", timeout=timeout)
     generator_obj = image_generator.Imager(
         timeout=timeout,
@@ -396,31 +405,45 @@ def text_to_image_default(message: telebot.types.Message):
         photo=generator_obj.generate(
             message.text,
         )[0],
-        caption=message.text,
-        reply_markup=make_delete_markup(message),
+        caption=message.text + " (default)",
+        reply_markup=make_regenerate_and_delete_markup(
+            message, provider="default", prompt=message.text
+        ),
+    )
+
+
+@bot.message_handler(commands=["image", "img"], is_chat_active=True)
+@bot.channel_post_handler(commands=["image", "img"], is_chat_active=True)
+@handler_formatter(text=True)
+def text_to_image_default_handler(message: telebot.types.Message):
+    """Handler for image generation - default"""
+    text_to_image_default(message)
+
+
+def text_to_image_prodia(message: telebot.types.Message):
+    """Shared obj : Generate image using `prodia` and respond"""
+    bot.send_chat_action(message.chat.id, "upload_photo", timeout=timeout)
+    generator_obj = image_generator.Prodia(timeout=timeout)
+    return bot.send_photo(
+        message.chat.id,
+        photo=generator_obj.generate(message.text)[0],
+        caption=message.text + " (prodia)",
+        reply_markup=make_regenerate_and_delete_markup(
+            message, provider="prodia", prompt=message.text
+        ),
     )
 
 
 @bot.message_handler(commands=["prodia", "prod"], is_chat_active=True)
 @bot.channel_post_handler(commands=["prodia", "prod"], is_chat_active=True)
 @handler_formatter(text=True)
-def text_to_image_prodia(message: telebot.types.Message):
-    """Generate image using `prodia`"""
-    bot.send_chat_action(message.chat.id, "upload_photo", timeout=timeout)
-    generator_obj = image_generator.Prodia(timeout=timeout)
-    return bot.send_photo(
-        message.chat.id,
-        photo=generator_obj.generate(message.text)[0],
-        caption=message.text,
-        reply_markup=make_delete_markup(message),
-    )
+def text_to_image_prodia_handler(message: telebot.types.Message):
+    """Handler for text to image"""
+    text_to_image_prodia(message)
 
 
-@bot.message_handler(commands=["speak", "spe"], is_chat_active=True)
-@bot.channel_post_handler(commands=["speak", "spe"], is_chat_active=True)
-@handler_formatter(text=True)
-def text_to_audio(message: telebot.types.Message):
-    """Convert text to audio"""
+def text_to_speech(message: telebot.types.Message):
+    """Shared obj : Convert text to speech and respond"""
     bot.send_chat_action(message.chat.id, "upload_audio", timeout=timeout)
     voice = User(message).chat.voice
     audio_chunk = audio_generator.text_to_audio(
@@ -432,10 +455,20 @@ def text_to_audio(message: telebot.types.Message):
         message.chat.id,
         audio=audio_chunk,
         caption=message.text,
-        reply_markup=make_delete_markup(message),
+        reply_markup=make_regenerate_and_delete_markup(
+            message, provider="speech", prompt=message.text
+        ),
         performer=voice,
         title="Text-to-Speech",
     )
+
+
+@bot.message_handler(commands=["speak", "spe"], is_chat_active=True)
+@bot.channel_post_handler(commands=["speak", "spe"], is_chat_active=True)
+@handler_formatter(text=True)
+def text_to_speech_handler(message: telebot.types.Message):
+    """Handler for text to speech"""
+    text_to_speech(message)
 
 
 @bot.message_handler(commands=["reset"], is_chat_admin=True, is_chat_active=True)
@@ -475,7 +508,7 @@ def change_chat_status_to_active(message: telebot.types.Message):
 
 
 @bot.message_handler(commands=["clear", "clear_chats"], is_bot_owner=True)
-@handler_formatter(admin=True)
+@handler_formatter()
 def clear_chats(message: telebot.types.Message):
     """Delete all chat entries"""
     session.query(Chat).delete()
@@ -490,7 +523,7 @@ def clear_chats(message: telebot.types.Message):
 
 
 @bot.message_handler(commands=["total", "total_chats"], is_bot_owner=True)
-@handler_formatter(admin=True)
+@handler_formatter()
 def total_chats_query(message: telebot.types.Message):
     """Query total chats"""
     total_chats = session.query(Chat).count()
@@ -505,7 +538,7 @@ def total_chats_query(message: telebot.types.Message):
 
 
 @bot.message_handler(commands=["drop", "drop_chats"], is_bot_owner=True)
-@handler_formatter(admin=True)
+@handler_formatter()
 def total_chats_table_and_logs(message: telebot.types.Message):
     """Drop chat table and create new"""
     if logfile:
@@ -526,7 +559,7 @@ def total_chats_table_and_logs(message: telebot.types.Message):
 
 
 @bot.message_handler(commands=["sql"], is_bot_owner=True)
-@handler_formatter(admin=True, text=True)
+@handler_formatter(text=True)
 def run_sql_statement(message: telebot.types.Message):
     """Run sql statements against database"""
     logging.warning(
@@ -559,7 +592,7 @@ def run_sql_statement(message: telebot.types.Message):
 
 
 @bot.message_handler(commands=["logs"], is_bot_owner=True)
-@handler_formatter(admin=True)
+@handler_formatter()
 def check_current_settings(message: telebot.types.Message):
     """View bot logs"""
     if not logfile:
@@ -597,7 +630,58 @@ def text_chat(message: telebot.types.Message):
         prompt=message.text, response=ai_response, force=True
     )
     user.chat.history = conversation.chat_history
-    send_long_text(message, ai_response)
+    send_long_text(message, ai_response, as_reply=False if message.from_user else True)
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("media::"))
+def media_regeneration_callback_handler(
+    call: telebot.types.CallbackQuery,
+):
+    """Media regeneration callback handler"""
+    action, provider, prompt = call.data.split("::")
+    message = call.message
+    message.text = prompt
+    if provider == "prodia":
+        return text_to_image_prodia(message)
+    elif provider == "default":
+        return text_to_image_default(message)
+    elif provider == "speech":
+        return text_to_speech(message)
+
+
+@bot.inline_handler(lambda query: query.query.endswith("..."))
+def handle_inline_query(inline_query: telebot.types.InlineQuery):
+    """Process the inline query and return AI response"""
+    try:
+        logging.info("Serving INLINE-QUERY - [{inline_query.from_user.id}].")
+        prompt = inline_query.query[:-3]
+        user = User(user_id=inline_query.from_user.id)
+        conversation = Conversation(max_tokens=max_tokens)
+        user_provider = provider_map.get(user.chat.provider)
+        conversation_prompt = conversation.gen_complete_prompt(
+            prompt, intro=user.chat.intro
+        )
+        ai_response = user_provider(is_conversation=False, timeout=timeout).chat(
+            conversation_prompt
+        )
+        feedback_options = [
+            telebot.types.InlineQueryResultArticle(
+                id="1",
+                title=ai_response,  # "AI Generated",
+                input_message_content=telebot.types.InputTextMessageContent(
+                    ai_response
+                ),
+            )
+        ]
+        bot.answer_inline_query(inline_query.id, feedback_options)
+
+    except Exception as e:
+        logging.debug(
+            f"Error while handling inline query - [{inline_query.from_user.id}]. {e}"
+        )
+        logging.error(
+            f"Error while handling inline query - [{inline_query.from_user.id}] : {e.args[1] if e.args and len(e.args)>1 else e}"
+        )
 
 
 @bot.message_handler(is_chat_active=True)
@@ -611,12 +695,12 @@ def any_other_action(message):
     )
 
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith("delete:"))
+@bot.callback_query_handler(func=lambda call: call.data.startswith("delete::"))
 def delete_callback_handler(
     call: telebot.types.CallbackQuery,
 ):
     """Delete callback handler"""
-    action, trigger_chat_id, trigger_message_id = call.data.split(":")
+    action, trigger_chat_id, trigger_message_id = call.data.split("::")
     try:
         bot.delete_message(trigger_chat_id, trigger_message_id)
     except:
