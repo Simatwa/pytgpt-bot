@@ -1,4 +1,4 @@
-from os import makedirs
+from os import makedirs, environ
 from pytgpt.utils import api_static_dir
 
 from pytgpt.opengpt import OPENGPT
@@ -11,6 +11,7 @@ from pytgpt.yepchat import YEPCHAT
 from pytgpt.auto import AUTO
 from random import choice
 import telebot
+import pytgpt.gpt4free.utils as g4f_util
 
 provider_map: dict[str, object] = {
     "opengpt": OPENGPT,
@@ -100,3 +101,46 @@ def make_delete_markup(
     )
     markup.add(callback_button)
     return markup
+
+
+def get_user_id(
+    message: telebot.types.Message | telebot.types.CallbackQuery = None,
+    user_id: int | str = None,
+) -> str:
+    """Extract id from Message obj or user_id
+
+    Args:
+        message (telebot.types.Message): Message object. Defaults to None.
+        user_id (int|str): User id. Defaults to None.
+
+    Returns:
+        int: PositiveInt
+    """
+    assert message or user_id, "Message or User id is required."
+
+    if user_id is not None:
+        user_id = str(user_id)
+
+    elif message.chat.type == "private":
+        user_id = str(message.from_user.id)
+
+    else:
+        user_id = str(message.chat.id)
+
+    return user_id[1:] if user_id[0] == "-" else user_id
+
+
+def get_g4f_providers() -> list[str]:
+    """Working gpt4free providers
+
+    Returns:
+        list[str]: Provider names.
+    """
+    g4f_test = g4f_util.TestProviders(
+        quiet=True,
+        do_log=True,
+    ).get_results(run=str(environ.get("test-g4f", "false")).lower() == "true")
+    working = []
+    for result in g4f_test:
+        working.append(result["name"])
+    return working

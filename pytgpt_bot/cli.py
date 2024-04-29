@@ -75,6 +75,16 @@ def bot():
     "--database",
     help="Database engine URL e.g sqlite:////:memory:",
 )
+@click.option(
+    "--skip-pending",
+    is_flag=True,
+    help="Ignore messages send before bot launched.",
+)
+@click.option(
+    "--test-g4f",
+    is_flag=True,
+    help="Test g4f-based providers' working statuses.",
+)
 @click.help_option("-h", "--help")
 def run(**kwargs):
     """Start the bot"""
@@ -91,7 +101,7 @@ def run(**kwargs):
 
         bot.infinity_polling(
             timeout=kwargs.get("timeout"),
-            skip_pending=True,
+            skip_pending=modded_kwargs.get("skip-pending").lower() == "true",
             long_polling_timeout=kwargs.get("timeout"),
         )
     except Exception as e:

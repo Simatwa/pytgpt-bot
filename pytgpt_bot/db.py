@@ -1,6 +1,7 @@
 from pytgpt_bot.models import Chat
 from pytgpt_bot.models import session
 from pytgpt_bot.config import admin_id
+from pytgpt_bot.utils import get_user_id
 from telebot.types import Message, CallbackQuery
 
 
@@ -14,16 +15,8 @@ class User:
             message (telebot.types.Message): Message object. Defaults to None.
             user_id (int): User id. Defaults to None
         """
-        assert message or user_id, "Message or User id is required."
 
-        if user_id:
-            id = user_id
-
-        elif message.chat.type == "private":
-            id = message.from_user.id
-
-        else:
-            id = message.chat.id
+        id = get_user_id(message, user_id)
 
         chat = session.query(Chat).filter_by(id=id).first()
         if chat:
@@ -32,7 +25,6 @@ class User:
         else:
             self.chat = Chat(id=id)
             session.add(self.chat)
-            session.commit()
 
     @property
     def is_admin(self) -> bool:

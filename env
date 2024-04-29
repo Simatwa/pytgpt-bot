@@ -32,6 +32,12 @@ voice=Brian
 #  If  you're stuck just leave it null.
 database=
 
+# Test g4f-based providers' working statuses
+test-g4f=true
+
+# Ignore messages send before launch
+skip-pending=true
+
 #Welcome to PYTGPT-BOT.
 #For chatting, text-to-image and text-to-voice conversions.
 

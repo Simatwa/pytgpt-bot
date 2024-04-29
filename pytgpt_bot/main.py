@@ -6,6 +6,7 @@ import pytgpt.imager as image_generator
 from pytgpt.utils import Audio as audio_generator
 from pytgpt.utils import Conversation
 from pytgpt.utils import AwesomePrompts
+from pytgpt.gpt4free import GPT4FREE
 from functools import wraps
 from sqlalchemy import text
 from uuid import uuid4
@@ -19,7 +20,6 @@ from pytgpt_bot.config import (
     loglevel,
     logfile,
     admin_ids,
-    provider,
 )
 from pytgpt_bot.db import User
 from pytgpt_bot.utils import (
@@ -27,6 +27,8 @@ from pytgpt_bot.utils import (
     get_random_emoji,
     provider_map,
     make_delete_markup,
+    get_user_id,
+    get_g4f_providers,
 )
 from pytgpt_bot.models import session, Chat, Temp, create_all, drop_all
 from pytgpt_bot.filters import (
@@ -37,7 +39,6 @@ from pytgpt_bot.filters import (
     IsChatCommandFilter,
 )
 
-chosen_provider: str = provider_map.get(provider)
 
 log_params = dict(
     format="%(asctime)s : %(levelname)s - %(message)s",
@@ -45,21 +46,23 @@ log_params = dict(
     level=loglevel,
 )
 
-awesome_prompts_dict: dict = AwesomePrompts().get_acts()
-awesome_prompts_keys: list = list(awesome_prompts_dict.keys())
-
 if logfile:
     log_params["filename"] = logfile
 
 logging.basicConfig(**log_params)
 
-bot = telebot.TeleBot(bot_token, disable_web_page_preview=True)
 
-bot.remove_webhook()
+bot = telebot.TeleBot(bot_token, disable_web_page_preview=True)
 
 logging.info(
     f"Bot started sucessfully {get_random_emoji('happy')}. Admin IDs - [{', '.join(admin_ids)}]"
 )
+
+bot.remove_webhook()
+
+awesome_prompts_dict: dict = AwesomePrompts().get_acts()
+awesome_prompts_keys: list = list(awesome_prompts_dict.keys())
+g4f_providers = get_g4f_providers()
 
 usage_info = (
     "Welcome to [PYTGPT-BOT](https://github.com/Simatwa/pytgpt-bot) ✨.\n"
@@ -115,7 +118,7 @@ def handler_formatter(text: bool = False, preserve: bool = False):
             try:
                 if message.chat.type == "private":
                     logging.info(
-                        f"Serving user [{message.from_user.id}] ({message.from_user.full_name}) - Function [{func.__name__}]"
+                        f"Serving user [{get_user_id(message)}] ({message.from_user.full_name}) - Function [{func.__name__}]"
                     )
                 else:
                     logging.info(f"Serving Group  - Function [{func.__name__}]")
@@ -227,7 +230,7 @@ def make_regenerate_and_delete_markup(
         )
     )
     regenerate_button = telebot.types.InlineKeyboardButton(
-        text="♻️", callback_data=f"media:{message.from_user.id}:{uuid}"
+        text="♻️", callback_data=f"media:{get_user_id(message,)}:{uuid}"
     )
     delete_button = telebot.types.InlineKeyboardButton(
         text="🗑️", callback_data=f"delete:{message.chat.id}:{message.id}"
@@ -241,7 +244,6 @@ def make_regenerate_and_delete_markup(
 @handler_formatter()
 def home(message: telebot.types.Message):
     """Show help"""
-    # print(message)
     return bot.send_message(
         message.chat.id,
         text=(usage_info + admin_commands if User(message).is_admin else usage_info),
@@ -256,7 +258,7 @@ def home(message: telebot.types.Message):
 def echo_user_id(message: telebot.types.Message):
     return bot.reply_to(
         message,
-        f"Greetings {message.from_user.first_name} {get_random_emoji('love')}. Your Telegram ID is {message.from_user.id}.",
+        f"Greetings {message.from_user.first_name} {get_random_emoji('love')}. Your Telegram ID is {get_user_id(message)}.",
         reply_markup=make_delete_markup(message),
     )
 
@@ -282,10 +284,19 @@ def set_chat_intro(message: telebot.types.Message):
 
 @bot.message_handler(commands=["voice"], is_chat_admin=True)
 @bot.channel_post_handler(commands=["voice"], is_chat_admin=True)
-@handler_formatter(text=False)
+@handler_formatter(text=False, preserve=True)
 def set_new_speech_voice(message: telebot.types.Message):
     """Set new voice for speech synthesis"""
-    user_id: str = message.from_user.id
+    user_id: str = get_user_id(message)
+    arguments: str = telebot_util.extract_arguments(message.text)
+    if arguments and arguments in audio_generator.all_voices:
+        User(user_id=user_id).chat.voice = arguments
+        return send_and_add_delete_button(
+            message,
+            f"{get_random_emoji('happy')} New voice set : `{arguments}`",
+            as_reply=True,
+        )
+
     markup = telebot.types.InlineKeyboardMarkup(row_width=4)
     make_item = lambda voice: telebot.types.InlineKeyboardButton(
         voice, callback_data=f"{voice}:{user_id}"
@@ -308,7 +319,7 @@ def set_new_speech_voice_callback_handler(call: telebot.types.CallbackQuery):
     voice, user_id = call.data.split(":")
     message = call.message
     markup = make_delete_markup(call.message)
-    user = User(user_id=int(user_id))
+    user = User(user_id=user_id)
     user.chat.voice = voice
     return bot.send_message(
         message.chat.id,
@@ -320,15 +331,23 @@ def set_new_speech_voice_callback_handler(call: telebot.types.CallbackQuery):
 
 @bot.message_handler(commands=["provider"], is_chat_admin=True)
 @bot.channel_post_handler(commands=["provider"], is_chat_admin=True)
-@handler_formatter(text=False)
+@handler_formatter(text=False, preserve=True)
 def set_new_chat_provider(message: telebot.types.Message):
     """Set new text provider"""
-    user_id: str = message.from_user.id
+    user_id: str = get_user_id(message)
+    arguments: str = telebot_util.extract_arguments(message.text)
+    if arguments and arguments in provider_keys + g4f_providers:
+        User(user_id=user_id).chat.provider = arguments
+        return send_and_add_delete_button(
+            message,
+            f"New text provider set {get_random_emoji('love')}: `{arguments}`",
+            as_reply=True,
+        )
     markup = telebot.types.InlineKeyboardMarkup(row_width=2)
     make_item = lambda provider: telebot.types.InlineKeyboardButton(
         provider, callback_data=f"{provider}:{user_id}"
     )
-    markup.add(*map(make_item, provider_keys))
+    markup.add(*map(make_item, provider_keys + g4f_providers))
     bot.delete_message(message.chat.id, message.id)
     return bot.send_message(
         message.chat.id,
@@ -337,14 +356,16 @@ def set_new_chat_provider(message: telebot.types.Message):
     )
 
 
-@bot.callback_query_handler(func=lambda call: call.data.split(":")[0] in provider_keys)
+@bot.callback_query_handler(
+    func=lambda call: call.data.split(":")[0] in provider_keys + g4f_providers
+)
 def set_new_chat_provider_callback_handler(call: telebot.types.CallbackQuery):
     """Set new text provider callback handler"""
     bot.delete_message(call.message.chat.id, call.message.id)
     provider, user_id = call.data.split(":")
     message = call.message
     markup = make_delete_markup(call.message)
-    user = User(user_id=int(user_id))
+    user = User(user_id=user_id)
     user.chat.provider = provider
     return bot.send_message(
         message.chat.id,
@@ -356,10 +377,16 @@ def set_new_chat_provider_callback_handler(call: telebot.types.CallbackQuery):
 
 @bot.message_handler(commands=["awesome"], is_chat_admin=True, is_chat_active=True)
 @bot.channel_post_handler(commands=["awesome"], is_chat_admin=True, is_chat_active=True)
-@handler_formatter(text=False)
+@handler_formatter(text=False, preserve=True)
 def set_awesome_prompt_as_chat_intro(message: telebot.types.Message):
     """Set awesome prompt as intro"""
-    user_id: str = message.from_user.id
+    user_id: str = get_user_id(message)
+    arguments: str = telebot_util.extract_arguments(message.text)
+    if arguments and arguments in awesome_prompts_keys:
+        User(user_id=user_id).chat.intro = arguments
+        return send_and_add_delete_button(
+            message, f"""New awesome-intro set:\n```{arguments}\n```.""", as_reply=True
+        )
     markup = telebot.types.InlineKeyboardMarkup(row_width=4)
     make_item = lambda awesome: telebot.types.InlineKeyboardButton(
         awesome, callback_data=f"{awesome}:{user_id}"
@@ -382,7 +409,7 @@ def set_awesome_prompt_as_chat_intro_callback_handler(
     """Set awesome prompt as intro callback handler"""
     bot.delete_message(call.message.chat.id, call.message.id)
     awesome_prompt, user_id = call.data.split(":")
-    user = User(user_id=int(user_id))
+    user = User(user_id=user_id)
     user.chat.intro = awesome_prompts_dict.get(awesome_prompt)
     return bot.send_message(
         call.message.chat.id,
@@ -546,7 +573,7 @@ def clear_chats(message: telebot.types.Message):
     session.query(Chat).delete()
     session.query(Temp).delete()
     logging.warning(
-        f"Clearing Chats - [{message.from_user.full_name}] ({message.from_user.id}, {message.from_user.username})"
+        f"Clearing Chats - [{message.from_user.full_name}] ({get_user_id(message)}, {message.from_user.username})"
     )
     return bot.reply_to(
         message,
@@ -561,7 +588,7 @@ def total_chats_query(message: telebot.types.Message):
     """Query total chats"""
     total_chats = session.query(Chat).count()
     logging.warning(
-        f"Total Chats query - [{message.from_user.full_name}] ({message.from_user.id}, {message.from_user.username})"
+        f"Total Chats query - [{message.from_user.full_name}] ({get_user_id(message)}, {message.from_user.username})"
     )
     return bot.reply_to(
         message,
@@ -578,10 +605,10 @@ def total_chats_table_and_logs(message: telebot.types.Message):
         with open(logfile, "w") as fh:
             pass
         logging.info(
-            f"ADMIN CLEARED LOGS & DROPPED CHAT TABLE [{message.from_user.id}] - ({message.from_user.full_name})\n"
+            f"ADMIN CLEARED LOGS & DROPPED CHAT TABLE [{get_user_id(message)}] - ({message.from_user.full_name})\n"
         )
     logging.warning(
-        f"Dropping all tables and recreate - [{message.from_user.full_name}] ({message.from_user.id}, {message.from_user.username})"
+        f"Dropping all tables and recreate - [{message.from_user.full_name}] ({get_user_id(message)}, {message.from_user.username})"
     )
     drop_all()
     create_all()
@@ -597,7 +624,7 @@ def total_chats_table_and_logs(message: telebot.types.Message):
 def run_sql_statement(message: telebot.types.Message):
     """Run sql statements against database"""
     logging.warning(
-        f"Running SQL statements - [{message.from_user.full_name}] ({message.from_user.id}, {message.from_user.username})"
+        f"Running SQL statements - [{message.from_user.full_name}] ({get_user_id(message)}, {message.from_user.username})"
     )
     try:
         results = session.execute(text(message.text))
@@ -646,19 +673,28 @@ def check_current_settings(message: telebot.types.Message):
     is_chat_active=True,
     commands=["chat"],
 )
+@handler_formatter(preserve=True)
 def text_chat(message: telebot.types.Message):
     """Text generation"""
+    if telebot_util.extract_command(message.text):
+        message.text = telebot_util.extract_arguments(message.text)
+
     user = User(message)
     conversation = Conversation(max_tokens=max_tokens)
     conversation.chat_history = user.chat.history
-    user_provider = provider_map.get(user.chat.provider)
     conversation_prompt = conversation.gen_complete_prompt(
         message.text, intro=user.chat.intro
     )
     bot.send_chat_action(message.chat.id, "typing")
-    ai_response = user_provider(is_conversation=False, timeout=timeout).chat(
-        conversation_prompt
-    )
+
+    provider_class = provider_map.get(user.chat.provider, GPT4FREE)
+    provider_class_kwargs: dict = dict(is_conversation=False, timeout=timeout)
+
+    if user.chat.provider in g4f_providers:
+        # gp4f provider
+        provider_class_kwargs["provider"] = user.chat.provider
+
+    ai_response = provider_class(**provider_class_kwargs).chat(conversation_prompt)
     conversation.update_chat_history(
         prompt=message.text, response=ai_response, force=True
     )
@@ -673,7 +709,7 @@ def media_regeneration_callback_handler(
     """Media regeneration callback handler"""
     action, user_id, uuid = call.data.split(":")
     message = call.message
-    message.from_user.id = int(user_id)
+    message.from_user.id = user_id
     temp = session.query(Temp).filter_by(uuid=uuid).first()
 
     if temp:
@@ -698,9 +734,10 @@ def media_regeneration_callback_handler(
 def handle_inline_query(inline_query: telebot.types.InlineQuery):
     """Process the inline query and return AI response"""
     try:
-        logging.info(f"Serving INLINE-QUERY - [{inline_query.from_user.id}].")
+        user_id = get_user_id(user_id=inline_query.from_user.id)
+        logging.info(f"Serving INLINE-QUERY - [{user_id}].")
         prompt = inline_query.query[:-3]
-        user = User(user_id=inline_query.from_user.id)
+        user = User(user_id=user_id)
         conversation = Conversation(max_tokens=max_tokens)
         user_provider = provider_map.get(user.chat.provider)
         conversation_prompt = conversation.gen_complete_prompt(
@@ -721,11 +758,9 @@ def handle_inline_query(inline_query: telebot.types.InlineQuery):
         bot.answer_inline_query(inline_query.id, feedback_options)
 
     except Exception as e:
-        logging.debug(
-            f"Error while handling inline query - [{inline_query.from_user.id}]. {e}"
-        )
+        logging.debug(f"Error while handling inline query - [{user_id}]. {e}")
         logging.error(
-            f"Error while handling inline query - [{inline_query.from_user.id}] : {e.args[1] if e.args and len(e.args)>1 else e}"
+            f"Error while handling inline query - [{user_id}] : {e.args[1] if e.args and len(e.args)>1 else e}"
         )
 
 

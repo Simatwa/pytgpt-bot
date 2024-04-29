@@ -12,5 +12,7 @@ from pytgpt_bot.main import bot
 if __name__ == "__main__":
     timeout = int(os.environ.get("timeout", 30))
     bot.infinity_polling(
-        timeout=timeout, skip_pending=True, long_polling_timeout=timeout
+        timeout=timeout,
+        skip_pending=str(os.environ.get("skip-pending", "true")).lower() == "true",
+        long_polling_timeout=timeout,
     )

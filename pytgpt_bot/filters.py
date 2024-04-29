@@ -3,6 +3,7 @@ from telebot import types, TeleBot
 from telebot.util import extract_command, extract_arguments
 from pytgpt_bot.db import User
 from pytgpt_bot.config import admin_ids
+from pytgpt_bot.utils import get_user_id
 
 
 class IsActiveFilter(SimpleCustomFilter):
@@ -45,17 +46,24 @@ class IsAdminFilter(SimpleCustomFilter):
         """
         :meta private:
         """
+
+        if message.chat.type == "private":
+            return True
+        else:
+            # channel message
+            return True
+        # I can't get this shit working
+        # like I want to check if the message receoived from a channel, is from the channel's admin.
+        """
         if isinstance(message, types.CallbackQuery):
             return self._bot.get_chat_member(
-                message.message.chat.id, message.from_user.id
+                message.message.chat.id, get_user_id(user_id=message.from_user.id)
             ).status in ["creator", "administrator"]
 
-        elif message.chat.type == "private":
-            return True
-
         return self._bot.get_chat_member(
-            message.chat.id, message.from_user.id
+            message.chat.id, get_user_id(user_id=message.from_user.id)
         ).status in ["creator", "administrator"]
+        """
 
 
 class IsBotTaggedFilter(SimpleCustomFilter):
