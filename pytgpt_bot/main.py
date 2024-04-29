@@ -698,7 +698,7 @@ def media_regeneration_callback_handler(
 def handle_inline_query(inline_query: telebot.types.InlineQuery):
     """Process the inline query and return AI response"""
     try:
-        logging.info("Serving INLINE-QUERY - [{inline_query.from_user.id}].")
+        logging.info(f"Serving INLINE-QUERY - [{inline_query.from_user.id}].")
         prompt = inline_query.query[:-3]
         user = User(user_id=inline_query.from_user.id)
         conversation = Conversation(max_tokens=max_tokens)
