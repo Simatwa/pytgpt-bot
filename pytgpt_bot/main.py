@@ -229,6 +229,7 @@ def make_regenerate_and_delete_markup(
             prompt=prompt,
         )
     )
+    session.commit()
     regenerate_button = telebot.types.InlineKeyboardButton(
         text="♻️", callback_data=f"media:{get_user_id(message,)}:{uuid}"
     )
@@ -277,6 +278,7 @@ def set_chat_intro(message: telebot.types.Message):
         )
     user = User(message)
     user.chat.intro = intro
+    session.commit()
     return bot.reply_to(
         message, "New intro set successfully.", reply_markup=make_delete_markup(message)
     )
@@ -291,6 +293,7 @@ def set_new_speech_voice(message: telebot.types.Message):
     arguments: str = telebot_util.extract_arguments(message.text)
     if arguments and arguments in audio_generator.all_voices:
         User(user_id=user_id).chat.voice = arguments
+        session.commit()
         return send_and_add_delete_button(
             message,
             f"{get_random_emoji('happy')} New voice set : `{arguments}`",
@@ -321,6 +324,7 @@ def set_new_speech_voice_callback_handler(call: telebot.types.CallbackQuery):
     markup = make_delete_markup(call.message)
     user = User(user_id=user_id)
     user.chat.voice = voice
+    session.commit()
     return bot.send_message(
         message.chat.id,
         f"{get_random_emoji('happy')} New voice set : `{voice}`",
@@ -338,6 +342,7 @@ def set_new_chat_provider(message: telebot.types.Message):
     arguments: str = telebot_util.extract_arguments(message.text)
     if arguments and arguments in provider_keys + g4f_providers:
         User(user_id=user_id).chat.provider = arguments
+        session.commit()
         return send_and_add_delete_button(
             message,
             f"New text provider set {get_random_emoji('love')}: `{arguments}`",
@@ -367,6 +372,7 @@ def set_new_chat_provider_callback_handler(call: telebot.types.CallbackQuery):
     markup = make_delete_markup(call.message)
     user = User(user_id=user_id)
     user.chat.provider = provider
+    session.commit()
     return bot.send_message(
         message.chat.id,
         f"New text provider set {get_random_emoji('love')}: `{provider}`",
@@ -383,9 +389,13 @@ def set_awesome_prompt_as_chat_intro(message: telebot.types.Message):
     user_id: str = get_user_id(message)
     arguments: str = telebot_util.extract_arguments(message.text)
     if arguments and arguments in awesome_prompts_keys:
-        User(user_id=user_id).chat.intro = arguments
+        new_awesome: str = awesome_prompts_dict.get(arguments)
+        User(user_id=user_id).chat.intro = new_awesome
+        session.commit()
         return send_and_add_delete_button(
-            message, f"""New awesome-intro set:\n```{arguments}\n```.""", as_reply=True
+            message,
+            f"""New awesome-intro set:\n```{new_awesome}\n```.""",
+            as_reply=True,
         )
     markup = telebot.types.InlineKeyboardMarkup(row_width=4)
     make_item = lambda awesome: telebot.types.InlineKeyboardButton(
@@ -411,6 +421,7 @@ def set_awesome_prompt_as_chat_intro_callback_handler(
     awesome_prompt, user_id = call.data.split(":")
     user = User(user_id=user_id)
     user.chat.intro = awesome_prompts_dict.get(awesome_prompt)
+    session.commit()
     return bot.send_message(
         call.message.chat.id,
         f"""New awesome-intro set:\n```{user.chat.intro}\n```.""",
@@ -536,7 +547,8 @@ def text_to_speech_handler(message: telebot.types.Message):
 def reset_chat(message: telebot.types.Message):
     """Reset current chat thread"""
     user = User(message)
-    user.delete()
+    session.delete(user.chat)
+    session.commit()
     return bot.reply_to(
         message,
         f"New chat instance created. {get_random_emoji('happy')}",
@@ -550,6 +562,7 @@ def reset_chat(message: telebot.types.Message):
 def change_chat_status_to_inactive(message: telebot.types.Message):
     chats = User(message).chat
     chats.is_active = False
+    session.commit()
     return bot.reply_to(
         message, text=f"Service Suspended 🚫.", reply_markup=make_delete_markup(message)
     )
@@ -561,6 +574,7 @@ def change_chat_status_to_inactive(message: telebot.types.Message):
 def change_chat_status_to_active(message: telebot.types.Message):
     chat = User(message).chat
     chat.is_active = True
+    session.commit()
     return bot.reply_to(
         message, text=f"Service Resumed 🚀.", reply_markup=make_delete_markup(message)
     )
@@ -572,6 +586,7 @@ def clear_chats(message: telebot.types.Message):
     """Delete all Tables"""
     session.query(Chat).delete()
     session.query(Temp).delete()
+    session.commit()
     logging.warning(
         f"Clearing Chats - [{message.from_user.full_name}] ({get_user_id(message)}, {message.from_user.username})"
     )
@@ -611,7 +626,9 @@ def total_chats_table_and_logs(message: telebot.types.Message):
         f"Dropping all tables and recreate - [{message.from_user.full_name}] ({get_user_id(message)}, {message.from_user.username})"
     )
     drop_all()
+    session.commit()
     create_all()
+    session.commit()
     return bot.reply_to(
         message,
         f"{get_random_emoji('love')} All tables dropped and logs cleared. New one created.",
@@ -699,6 +716,7 @@ def text_chat(message: telebot.types.Message):
         prompt=message.text, response=ai_response, force=True
     )
     user.chat.history = conversation.chat_history
+    session.commit()
     send_long_text(message, ai_response, as_reply=False if message.from_user else True)
 
 

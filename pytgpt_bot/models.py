@@ -18,7 +18,7 @@ engine = create_engine(database_str)
 
 autocommit_engine = engine.execution_options(isolation_level="AUTOCOMMIT")
 
-Session = sessionmaker(bind=autocommit_engine)
+Session = sessionmaker(bind=engine)
 
 session = Session()
 
