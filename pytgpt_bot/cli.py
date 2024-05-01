@@ -1,3 +1,4 @@
+import asyncio
 import click
 from pytgpt.utils import Audio
 from pytgpt_bot import __version__
@@ -99,10 +100,11 @@ def run(**kwargs):
     try:
         from pytgpt_bot.main import bot
 
-        bot.infinity_polling(
-            timeout=kwargs.get("timeout"),
-            skip_pending=modded_kwargs.get("skip-pending").lower() == "true",
-            long_polling_timeout=kwargs.get("timeout"),
+        asyncio.run(
+            bot.infinity_polling(
+                timeout=kwargs.get("timeout"),
+                skip_pending=modded_kwargs.get("skip-pending").lower() == "true",
+            )
         )
     except Exception as e:
         logging.error(e.args[1] if e.args and len(e.args) > 1 else str(e))

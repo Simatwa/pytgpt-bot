@@ -1,4 +1,4 @@
-from telebot.custom_filters import SimpleCustomFilter
+from telebot.asyncio_filters import SimpleCustomFilter
 from telebot import types, TeleBot
 from telebot.util import extract_command, extract_arguments
 from pytgpt_bot.db import User
@@ -11,7 +11,7 @@ class IsActiveFilter(SimpleCustomFilter):
 
     key: str = "is_chat_active"
 
-    def check(self, message: types.Message | types.CallbackQuery):
+    async def check(self, message: types.Message | types.CallbackQuery):
         if isinstance(message, types.CallbackQuery):
             return User(message.message).chat.is_active
         return User(message).chat.is_active
@@ -22,7 +22,7 @@ class IsBotOwnerFilter(SimpleCustomFilter):
 
     key: str = "is_bot_owner"
 
-    def check(self, message: types.Message):
+    async def check(self, message: types.Message):
         return str(User(message).chat.id) in admin_ids
 
 
@@ -42,7 +42,7 @@ class IsAdminFilter(SimpleCustomFilter):
     def __init__(self, bot):
         self._bot = bot
 
-    def check(self, message: types.Message | types.CallbackQuery):
+    async def check(self, message: types.Message | types.CallbackQuery):
         """
         :meta private:
         """
@@ -79,7 +79,7 @@ class IsBotTaggedFilter(SimpleCustomFilter):
         """
         self.bot_info = bot_info
 
-    def check(self, message: types.Message):
+    async def check(self, message: types.Message):
         if message.text:
             return "@" + self.bot_info.username == message.text.split(" ")[0]
 
@@ -91,6 +91,6 @@ class IsChatCommandFilter(SimpleCustomFilter):
 
     key: str = "is_chat_command"
 
-    def check(self, message: types.Message):
+    async def check(self, message: types.Message):
         command = extract_command(message.text)
         return command == "chat" if command else True
