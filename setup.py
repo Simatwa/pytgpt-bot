@@ -13,7 +13,7 @@ def read_contents(path: str) -> str:
 setup(
     name="pytgpt-bot",
     packages=["pytgpt_bot"],
-    version="0.1.7.2",
+    version="0.1.7.3",
     license="MIT",
     author="Smartwa",
     maintainer="Smartwa",
