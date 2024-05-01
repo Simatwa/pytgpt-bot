@@ -467,14 +467,15 @@ async def check_chat_history(message: telebot.types.Message):
 async def text_to_image_default(message: telebot.types.Message):
     """Shared obj : Generate image using `image`"""
     await bot.send_chat_action(message.chat.id, "upload_photo", timeout=timeout)
-    generator_obj = image_generator.Imager(
+    generator_obj = image_generator.AsyncImager(
         timeout=timeout,
+    )
+    image_chunk = await generator_obj.generate(
+        message.text,
     )
     return await bot.send_photo(
         message.chat.id,
-        photo=generator_obj.generate(
-            message.text,
-        )[0],
+        photo=image_chunk[0],
         caption=message.text + " (default)",
         reply_markup=await make_regenerate_and_delete_markup(
             message, provider="default", prompt=message.text
@@ -493,10 +494,11 @@ async def text_to_image_default_handler(message: telebot.types.Message):
 async def text_to_image_prodia(message: telebot.types.Message):
     """Shared obj : Generate image using `prodia` and respond"""
     await bot.send_chat_action(message.chat.id, "upload_photo", timeout=timeout)
-    generator_obj = image_generator.Prodia(timeout=timeout)
+    generator_obj = image_generator.AsyncProdia(timeout=timeout)
+    image_chunk = await generator_obj.generate(message.text)
     return await bot.send_photo(
         message.chat.id,
-        photo=generator_obj.generate(message.text)[0],
+        photo=image_chunk[0],
         caption=message.text + " (prodia)",
         reply_markup=await make_regenerate_and_delete_markup(
             message, provider="prodia", prompt=message.text
@@ -516,7 +518,7 @@ async def text_to_speech(message: telebot.types.Message):
     """Shared obj : Convert text to speech and respond"""
     await bot.send_chat_action(message.chat.id, "upload_audio", timeout=timeout)
     voice = User(message).chat.voice
-    audio_chunk = audio_generator.text_to_audio(
+    audio_chunk = await audio_generator.async_text_to_audio(
         message=message.text,
         voice=voice,
         timeout=timeout,
