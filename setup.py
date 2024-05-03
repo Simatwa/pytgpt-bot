@@ -13,7 +13,7 @@ def read_contents(path: str) -> str:
 setup(
     name="pytgpt-bot",
     packages=["pytgpt_bot"],
-    version="0.1.7.3",
+    version="0.1.7.4",
     license="MIT",
     author="Smartwa",
     maintainer="Smartwa",
@@ -35,7 +35,7 @@ setup(
     },
     install_requires=[
         "pytelegrambotapi==4.17.0",
-        "python-tgpt==0.6.6",
+        "python-tgpt==0.7.0",
         "python-dotenv==1.0.0",
         "click==8.1.3",
         "SQLAlchemy==2.0.29",

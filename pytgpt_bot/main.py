@@ -8,7 +8,7 @@ import pytgpt.imager as image_generator
 from pytgpt.utils import Audio as audio_generator
 from pytgpt.utils import Conversation
 from pytgpt.utils import AwesomePrompts
-from pytgpt.gpt4free import GPT4FREE
+from pytgpt.gpt4free import AsyncGPT4FREE
 from functools import wraps
 from sqlalchemy import text
 from uuid import uuid4
@@ -700,14 +700,16 @@ async def text_chat(message: telebot.types.Message):
     )
     await bot.send_chat_action(message.chat.id, "typing")
 
-    provider_class = provider_map.get(user.chat.provider, GPT4FREE)
+    provider_class = provider_map.get(user.chat.provider, AsyncGPT4FREE)
     provider_class_kwargs: dict = dict(is_conversation=False, timeout=timeout)
 
     if user.chat.provider in g4f_providers:
         # gp4f provider
         provider_class_kwargs["provider"] = user.chat.provider
 
-    ai_response = provider_class(**provider_class_kwargs).chat(conversation_prompt)
+    ai_response = await provider_class(**provider_class_kwargs).chat(
+        conversation_prompt
+    )
     conversation.update_chat_history(
         prompt=message.text, response=ai_response, force=True
     )
@@ -782,7 +784,7 @@ async def handle_inline_query(inline_query: telebot.types.InlineQuery):
 @bot.message_handler(is_chat_active=True)
 @bot.channel_post_handler(is_chat_active=True, is_bot_tagged=True)
 async def any_other_action(message):
-    return bot.reply_to(
+    return await bot.reply_to(
         message,
         usage_info,
         reply_markup=make_delete_markup(message),

@@ -1,28 +1,15 @@
 from os import makedirs, environ
 from pytgpt.utils import api_static_dir
-
-from pytgpt.opengpt import OPENGPT
-from pytgpt.koboldai import KOBOLDAI
-from pytgpt.phind import PHIND
-from pytgpt.llama2 import LLAMA2
-from pytgpt.blackboxai import BLACKBOXAI
-from pytgpt.perplexity import PERPLEXITY
-from pytgpt.yepchat import YEPCHAT
-from pytgpt.auto import AUTO
+from pytgpt.async_providers import tgpt_mapper as provider_map
+from pytgpt.auto import AsyncAUTO
 from random import choice
 import telebot
 import pytgpt.gpt4free.utils as g4f_util
 
-provider_map: dict[str, object] = {
-    "opengpt": OPENGPT,
-    "koboldai": KOBOLDAI,
-    "phind": PHIND,
-    "llama2": LLAMA2,
-    "blackboxai": BLACKBOXAI,
-    "perplexity": PERPLEXITY,
-    "yepchat": YEPCHAT,
-    "auto": AUTO,
-}
+provider_map.update(
+    dict(auto=AsyncAUTO),
+)
+
 
 emojis: dict[str, list[str]] = {
     "angry": [
