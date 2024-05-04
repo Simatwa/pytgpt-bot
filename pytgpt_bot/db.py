@@ -25,6 +25,7 @@ class User:
         else:
             self.chat = Chat(id=id)
             session.add(self.chat)
+            session.commit()  # For the sake of async
 
     @property
     def is_admin(self) -> bool:
