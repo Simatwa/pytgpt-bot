@@ -438,7 +438,7 @@ async def check_current_settings(message: telebot.types.Message):
     chat = User(message).chat
     current_user_settings = (
         f"Is Active :  `{chat.is_active}`\n"
-        f"Chat Length : `{len(chat.history)}`\n"
+        f"Chat Length : `{len(chat.history) if chat.history else 0}`\n"
         f"Speech Voice : `{chat.voice}`\n"
         f"Chat Provider : `{chat.provider}`\n"
         f"Chat Intro : `{chat.intro}`"
