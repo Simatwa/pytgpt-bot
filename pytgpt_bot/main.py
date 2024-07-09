@@ -799,9 +799,8 @@ async def any_other_action(message):
     return await bot.reply_to(
         message,
         usage_info,
-        reply_markup=make_delete_markup(message),
-        parse_mode="Markdown",
         reply_markup=markup,
+        parse_mode="Markdown",
     )
 
 
