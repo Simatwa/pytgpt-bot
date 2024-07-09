@@ -11,6 +11,7 @@ from pytgpt_bot.main import bot
 
 if __name__ == "__main__":
     timeout = int(os.environ.get("timeout", 30))
+    print("Infinity polling ...")
     asyncio.run(
         bot.infinity_polling(
             timeout=timeout,

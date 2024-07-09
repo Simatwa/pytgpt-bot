@@ -250,10 +250,16 @@ async def make_regenerate_and_delete_markup(
 @handler_formatter()
 async def home(message: telebot.types.Message):
     """Show help"""
+    markup = make_delete_markup(message)
+    markup.add(
+        telebot.types.InlineKeyboardButton(
+            text="Contact Developer", url="https://t.me/AlphaBei"
+        )
+    )
     return await bot.send_message(
         message.chat.id,
         text=(usage_info + admin_commands if User(message).is_admin else usage_info),
-        reply_markup=make_delete_markup(message),
+        reply_markup=markup,
         parse_mode="Markdown",
     )
 
