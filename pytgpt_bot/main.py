@@ -790,11 +790,18 @@ async def handle_inline_query(inline_query: telebot.types.InlineQuery):
 @bot.message_handler(is_chat_active=True)
 @bot.channel_post_handler(is_chat_active=True, is_bot_tagged=True)
 async def any_other_action(message):
+    markup = make_delete_markup(message)
+    markup.add(
+        telebot.types.InlineKeyboardButton(
+            text="Contact Developer", url="https://t.me/AlphaBei"
+        )
+    )
     return await bot.reply_to(
         message,
         usage_info,
         reply_markup=make_delete_markup(message),
         parse_mode="Markdown",
+        reply_markup=markup,
     )
 
 
