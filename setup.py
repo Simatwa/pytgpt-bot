@@ -35,7 +35,7 @@ setup(
     },
     install_requires=[
         "pytelegrambotapi==4.17.0",
-        "python-tgpt==0.7.0",
+        "python-tgpt>=0.8.0",
         "python-dotenv==1.0.0",
         "click==8.1.3",
         "SQLAlchemy==2.0.29",
