@@ -14,7 +14,7 @@ on:
         options:
         - info
         - warning
-        - debug]
+        - debug
   
 jobs:
   build:
