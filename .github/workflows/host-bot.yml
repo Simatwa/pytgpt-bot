@@ -1,0 +1,33 @@
+name: Run Bot
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'
+        required: true
+        default: 'warning'
+        type: choice
+        options:
+        - info
+        - warning
+        - debug
+  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Python 3
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.12
+    - name: Install Dependencies
+      run: |
+          pip install -U pip
+          pip install -r requirements.txt
+    - name: Running bot
+      run: |
+        python3 -m pytgpt_bot run --admin-id=${{ secrets.ADMIN_ID }} --voice=Brian --loglevel=50 --test-g4f ${{ secrets.BOT_TOKEN }}
